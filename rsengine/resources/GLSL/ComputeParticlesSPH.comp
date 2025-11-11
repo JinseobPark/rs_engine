@@ -1,0 +1,103 @@
+#version 460
+
+layout(local_size_x = 256) in; // Work group size
+
+layout(std430, binding = 0) buffer PosBuffer {
+    vec4 positions[];
+};
+
+layout(std430, binding = 1) buffer VelBuffer {
+    vec4 velocities[];
+};
+
+layout(std430, binding = 2) buffer AccBuffer {
+    vec4 accelerations[];
+};
+
+uniform float deltaTime;
+
+
+uniform vec3 box_min;
+uniform vec3 box_max;
+
+uniform vec3 circle_center = vec3(0.0f);
+uniform float circle_radius = 1.0f;
+
+uniform float particle_radius = 0.1f;
+uniform float collision_stiffness = 100.0f; // Stiffness of the collision response
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+
+    // Update  particle velocity
+    velocities[id] += accelerations[id]* deltaTime;
+
+    // Update particle position
+    positions[id] += velocities[id] * deltaTime;
+
+
+	// SPH: Particle-particle collision
+    vec3 pos = positions[id].xyz;
+
+    // Check collision with other particles by Brute force method
+    for (uint i = 0; i < positions.length(); ++i) {
+        if (i != id) {
+            vec3 other_pos = positions[i].xyz;
+            vec3 diff = pos - other_pos;
+            float dist = length(diff);
+            float combined_radius = 2.0 * particle_radius;
+
+            if (dist < combined_radius) {
+                vec3 direction = normalize(diff);
+                float penetration = combined_radius - dist;
+                vec3 correction = direction * penetration * collision_stiffness * deltaTime;
+
+                // Apply corrections to positions and velocities
+                positions[id].xyz += correction * 0.5;
+                positions[i].xyz -= correction * 0.5;
+
+                velocities[id].xyz += correction * 0.5;
+                velocities[i].xyz -= correction * 0.5;
+            }
+        }
+    }
+
+
+
+
+	// Collision with the circle, then bouns back
+	// if the particle is inside the circle xyz
+	vec3 circle_center_to_particle = positions[id].xyz - circle_center;
+
+	if (dot(circle_center_to_particle, circle_center_to_particle) < circle_radius * circle_radius) {
+		// if the particle is inside the circle, then move the particle to the surface of the circle
+		positions[id].xyz = circle_center + normalize(circle_center_to_particle) * circle_radius;
+		// reflect the velocity vector
+		velocities[id].xyz -= 2.0f * dot(velocities[id].xyz, normalize(circle_center_to_particle)) * normalize(circle_center_to_particle) * 1.03f;
+	}
+	
+
+    // Collision with the ground, then bouns back
+    if (positions[id].y < 0.2) {
+		positions[id].y = 0.2;
+		velocities[id].y = -velocities[id].y * 0.5;
+	}
+    // Collision with the walls, then bouns back
+	if (positions[id].x < box_min.x) {
+		positions[id].x = box_min.x;
+		velocities[id].x = -velocities[id].x * 0.7;
+	}
+    if (positions[id].x > box_max.x) {
+		positions[id].x = box_max.x;
+		velocities[id].x = -velocities[id].x * 0.7;
+	}
+
+	if (positions[id].z < box_min.z) {
+		positions[id].z = box_min.z;
+		velocities[id].z = -velocities[id].z * 0.7;
+	}
+	if (positions[id].z > box_max.z) {
+		positions[id].z = box_max.z;
+		velocities[id].z = -velocities[id].z * 0.7;
+	}
+}

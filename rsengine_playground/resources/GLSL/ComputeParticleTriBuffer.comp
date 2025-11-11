@@ -1,0 +1,183 @@
+
+#version 430 core
+
+layout(local_size_x = 1024) in; // Work group size
+
+layout(std430, binding = 0) buffer PositionIn {
+    vec4 positions_in[]; // xyz: position, w: density
+};
+
+layout(std430, binding = 1) buffer PositionOut {
+    vec4 positions_out[]; // xyz: position, w: density
+};
+
+layout(std430, binding = 2) buffer VelocityIn {
+    vec4 velocities_in[]; // xyz: velocity, w: pressure
+};
+
+layout(std430, binding = 3) buffer VelocityOut{
+    vec4 velocities_out[]; // xyz: velocity, w: pressure
+};
+
+layout(std430, binding = 4) buffer AccelerationIn {
+    vec4 accelerations_in[]; // xyz: acceleration, w: unused
+};
+
+layout(std430, binding = 5) buffer AccelerationOut{
+    vec4 accelerations_out[]; // xyz: acceleration, w: unused
+};
+
+uniform float deltaTime;
+uniform vec3 box_min;
+uniform vec3 box_max;
+
+uniform vec3 circle_center = vec3(0.0f);
+uniform float circle_radius = 1.0f;
+
+uniform float particle_radius = 0.1f;
+uniform float collision_stiffness = 100.0f; // Stiffness of the collision response
+
+uniform float rest_density = 1000.0f; // Rest density of the fluid
+uniform float gas_constant = 2000.0f; // Gas constant for equation of state
+uniform float h = 0.15f; // Smoothing radius
+
+uniform vec3 gravity = vec3(0.0, -9.8, 0.0); // Gravity acceleration
+uniform float max_velocity = 10.0f; // Maximum allowed velocity
+uniform bool is_play = false;
+
+// SPH kernels
+float poly6_kernel(float r, float h) {
+    if (r >= 0.0 && r <= h) {
+        float hr = (h * h - r * r);
+        return 315.0 / (64.0 * 3.14159265359 * pow(h, 9.0)) * hr * hr * hr;
+    } else {
+        return 0.0;
+    }
+}
+
+// Gradient of the spiky kernel
+float spiky_kernel_gradient(float r, float h) {
+    if (r >= 0.0 && r <= h) {
+        float hr = (h - r);
+        return -45.0 / (3.14159265359 * pow(h, 6.0)) * hr * hr;
+    } else {
+        return 0.0;
+    }
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+
+    // Compute density
+    float density = 0.0;
+    float density_final = 0.0;
+
+    // Temp datas from the input buffers
+    vec3 pos = positions_in[id].xyz;
+    vec3 vel = velocities_in[id].xyz;
+    vec3 acc = accelerations_in[id].xyz;
+
+    // Initialize acceleration with gravity
+    accelerations_out[id].xyz = gravity;
+    //acc = gravity;
+
+    // Apply pressure forces
+    vec3 pressure_force = vec3(0.0);
+    
+    vel.xyz += gravity * deltaTime;
+    pos.xyz += vel.xyz * deltaTime;
+    
+    positions_out[id].xyz = pos;
+    velocities_out[id].xyz = vel;
+    accelerations_out[id].xyz = acc;
+
+
+
+    barrier(); // Ensure all updates are completed before proceeding
+
+    // SPH: Particle-particle collision
+    for (uint i = 0; i < positions_in.length(); ++i) {
+        if (i != id) {
+            vec3 other_pos = positions_in[i].xyz;
+            vec3 diff = pos - other_pos;
+            float dist = length(diff);
+            float combined_radius = 2.0 * particle_radius;
+
+            if(dist < combined_radius)
+            {
+                vec3 direction = normalize(diff);
+                float penetration = combined_radius - dist;
+                vec3 correction = penetration * direction * collision_stiffness * deltaTime;
+
+                // 
+
+                // Apply corrections to positions and velocities
+                positions_out[id].xyz += correction * 0.5;
+                positions_out[i].xyz -= correction * 0.5;
+
+                velocities_out[id].xyz += correction * 0.5;
+                velocities_out[i].xyz -= correction * 0.5;
+            }
+        }
+    }
+     
+    
+    barrier(); // Ensure all updates are completed before proceeding
+
+
+    // Collision with the circle, then bounce back
+    if(is_play)
+    {
+        vec3 circle_center_to_particle = pos.xyz - circle_center;
+
+        if (dot(circle_center_to_particle, circle_center_to_particle) < circle_radius * circle_radius) {
+            // If the particle is inside the circle, then move the particle to the surface of the circle
+            positions_out[id].xyz = circle_center + normalize(circle_center_to_particle) * circle_radius;
+            // Reflect the velocity vector
+            velocities_out[id].xyz -= 2.0f * dot( velocities_out[id].xyz, normalize(circle_center_to_particle)) * normalize(circle_center_to_particle);
+        }
+    }
+    
+    // Under codes should be fixed with the boundary condition.
+
+    // Collision with the ground, then bounce back
+    if (positions_out[id].y < 0.2) {
+        positions_out[id].y = 0.2;
+         velocities_out[id].y = - velocities_out[id].y * 0.9f;
+    }
+
+    // Collision with the walls, then bounce back
+    if (positions_out[id].x < box_min.x) {
+        positions_out[id].x = box_min.x;
+         velocities_out[id].x = - velocities_out[id].x * 0.9f;
+    }
+    if (positions_out[id].x > box_max.x) {
+        positions_out[id].x = box_max.x;
+         velocities_out[id].x = - velocities_out[id].x * 0.9f;
+    }
+
+    if (positions_out[id].y < box_min.y) {
+	    positions_out[id].y = box_min.y;
+		velocities_out[id].y = - velocities_out[id].y * 0.9f;
+	}
+    if (positions_out[id].y > box_max.y) {
+        positions_out[id].y = box_max.y;
+		velocities_out[id].y = - velocities_out[id].y * 0.9f;
+	}
+
+
+
+    if (positions_out[id].z < box_min.z) {
+        positions_out[id].z = box_min.z;
+        velocities_out[id].z = - velocities_out[id].z * 0.9f;
+    }
+    if (positions_out[id].z > box_max.z) {
+        positions_out[id].z = box_max.z;
+        velocities_out[id].z = - velocities_out[id].z * 0.9f;
+    }
+    
+
+//    positions_out[id].xyz = pos;
+//    velocities_out[id].xyz = vel;
+//    accelerations_out[id].xyz = acc;
+}

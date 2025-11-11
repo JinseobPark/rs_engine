@@ -1,0 +1,70 @@
+#version 460
+
+layout(local_size_x = 256) in; // Work group size
+
+layout(std430, binding = 0) buffer PosBuffer {
+    vec4 positions[];
+};
+
+layout(std430, binding = 1) buffer VelBuffer {
+    vec4 velocities[];
+};
+
+layout(std430, binding = 2) buffer AccBuffer {
+    vec4 accelerations[];
+};
+
+uniform float deltaTime;
+
+
+uniform vec3 box_min;
+uniform vec3 box_max;
+
+uniform vec3 circle_center = vec3(0.0f);
+uniform float circle_radius = 1.0f;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+
+    // Update  particle velocity
+    velocities[id] += accelerations[id]* deltaTime;
+
+    // Update particle position
+    positions[id] += velocities[id] * deltaTime;
+
+	// Collision with the circle, then bouns back
+	// if the particle is inside the circle xyz
+	vec3 circle_center_to_particle = positions[id].xyz - circle_center;
+
+	if (dot(circle_center_to_particle, circle_center_to_particle) < circle_radius * circle_radius) {
+		// if the particle is inside the circle, then move the particle to the surface of the circle
+		positions[id].xyz = circle_center + normalize(circle_center_to_particle) * circle_radius;
+		// reflect the velocity vector
+		velocities[id].xyz -= 2.0f * dot(velocities[id].xyz, normalize(circle_center_to_particle)) * normalize(circle_center_to_particle);
+	}
+	
+
+    // Collision with the ground, then bouns back
+    if (positions[id].y < 0.0) {
+		positions[id].y = 0.0;
+		velocities[id].y = -velocities[id].y;
+	}
+    // Collision with the walls, then bouns back
+	if (positions[id].x < box_min.x) {
+		positions[id].x = box_min.x;
+		velocities[id].x = -velocities[id].x;
+	}
+    if (positions[id].x > box_max.x) {
+		positions[id].x = box_max.x;
+		velocities[id].x = -velocities[id].x;
+	}
+
+	if (positions[id].z < box_min.z) {
+		positions[id].z = box_min.z;
+		velocities[id].z = -velocities[id].z;
+	}
+	if (positions[id].z > box_max.z) {
+		positions[id].z = box_max.z;
+		velocities[id].z = -velocities[id].z;
+	}
+}

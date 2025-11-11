@@ -1,0 +1,172 @@
+#version 460
+
+layout (local_size_x = 256) in;
+
+layout (std430, binding = 0) buffer PositionBuffer {
+    vec4 positions[];
+};
+
+layout (std430, binding = 1) buffer VelocityBuffer {
+    vec4 velocities[];
+};
+
+layout (std430, binding = 2) buffer AccelerationBuffer {
+    vec4 accelerations[];
+};
+
+// vec3 : vertex, float : property. // But now property is not used.
+// 3 vertex per triangle. only triangle use.
+layout (std430, binding = 5) buffer CollisionMeshBuffer {
+    vec4 collision_meshes[];
+};
+
+uniform float deltaTime;
+uniform vec3 box_min;
+uniform vec3 box_max;
+
+uniform vec3 circle_center = vec3(0.0f);
+uniform float circle_radius = 1.0f;
+uniform float u_particle_radius = 0.1f;
+
+bool CollidePositionTriangle(vec3 pos, vec3 vel, vec3 v0, vec3 v1, vec3 v2) {
+    //  Trumbore intersection algorithm
+    vec3 pos1 = pos;
+    vec3 pos2 = pos + vel * deltaTime;
+
+     vec3 d = pos2 - pos1;
+    vec3 e1 = v1 - v0;
+    vec3 e2 = v2 - v0;
+    vec3 h = cross(d, e2);
+    float a = dot(e1, h);
+
+    if (abs(a) < 0.00001) return false;
+    float f = 1.0 / a;
+
+    vec3 s = pos1 - v0;
+    float u = f * dot(s, h);
+    if (u < 0.0 || u > 1.0) return false;
+
+    vec3 q = cross(s, e1);
+    float v = f * dot(d, q);
+    if (v < 0.0 || u + v > 1.0) return false;
+
+    float t = f * dot(e2, q);
+
+    return (t >= (0.0 - u_particle_radius) && t <= (1.0 + u_particle_radius));
+
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= positions.length()) {
+		return;
+	}
+
+    if(accelerations[id].w >= 0) {
+       positions[id].xyz += velocities[id].xyz * deltaTime;
+        return;
+	}
+    else if(accelerations[id].w >= -1.8 || accelerations[id].w <= -2.2) {
+		return;
+	}
+    const float particle_size = u_particle_radius;
+
+    vec3 pos = positions[id].xyz;
+    vec3 vel = velocities[id].xyz;
+    vec3 acc = accelerations[id].xyz;
+
+    // Integrate motion
+
+
+    // Reflect velocity vector when the particle hits the wall
+    const float DAMP = 0.3f;
+
+
+
+    
+	// Collision with the circle, then bouns back
+	//if the particle is inside the circle xyz
+    vec3 circle_center_to_particle = positions[id].xyz - circle_center;
+
+	if (dot(circle_center_to_particle, circle_center_to_particle) < circle_radius * circle_radius) {
+		// if the particle is inside the circle, then move the particle to the surface of the circle
+		pos.xyz = circle_center + normalize(circle_center_to_particle) * circle_radius;
+		// reflect the velocity vector
+		vel.xyz -= 2.0f * dot(vel.xyz, normalize(circle_center_to_particle)) * normalize(circle_center_to_particle) * 1.03f;
+	}
+	
+    
+    // Collision with the ground, then bounce back
+    if (pos.y < 0.2 + particle_size) {
+        pos.y = 0.2 + particle_size;
+//         vel.y *= -1 * DAMP;
+         //vel.y = - vel.y * DAMP;
+//         acc.xyz += 128 * vec3(0, -1, 0) * vel.xyz;
+
+        //p.velocity = p.velocity * -2 * dot(p.velocity, planeNormal) * planeNormal * bounceCoefficient
+        vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, vec3(0, 1, 0)) * vec3(0, 1, 0);
+
+    }
+
+    // Collision with the walls, then bounce back
+    if (pos.x < box_min.x + particle_size) {
+        pos.x = box_min.x + particle_size;
+
+        //p.velocity = p.velocity * -2 * dot(p.velocity, planeNormal) * planeNormal * bounceCoefficient
+        vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, vec3(1, 0, 0)) * vec3(1, 0, 0)* DAMP;
+
+        // vel.x = - vel.x * DAMP;
+    }
+    if (pos.x > box_max.x - particle_size) {
+        pos.x = box_max.x - particle_size;
+        vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, vec3(-1, 0, 0)) * vec3(-1, 0, 0)* DAMP;
+//         vel.x = - vel.x * DAMP;
+    }
+
+    if (pos.y < box_min.y + particle_size) {
+	    pos.y = box_min.y + particle_size;
+		vel.y = - vel.y * DAMP;
+	}
+    if (pos.y > box_max.y - particle_size) {
+        pos.y = box_max.y - particle_size;
+		vel.y = - vel.y * DAMP;
+	}
+
+    if (pos.z < box_min.z + particle_size) {
+        pos.z = box_min.z + particle_size;
+        vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, vec3(0, 0, 1)) * vec3(0, 0, 1) * DAMP;
+//        vel.z = - vel.z * DAMP;
+    }
+    if (pos.z > box_max.z - particle_size) {
+        pos.z = box_max.z - particle_size;
+        vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, vec3(0, 0, -1)) * vec3(0, 0, -1) * DAMP;
+//        vel.z = - vel.z * DAMP;
+    }
+
+    vel.xyz += acc.xyz * deltaTime;
+    
+    // Triangle Check from collision_meshes
+    for (uint collision_index = 0; collision_index< collision_meshes.length(); collision_index += 3) {
+
+        // Get the vertices of the triangle
+		vec3 v0 = collision_meshes[collision_index + 0].xyz;
+		vec3 v1 = collision_meshes[collision_index + 1].xyz;
+		vec3 v2 = collision_meshes[collision_index + 2].xyz;
+
+        // If the position is in the triangle, then bounce back by the plane
+		if(CollidePositionTriangle(pos.xyz, vel.xyz, v0, v1, v2))
+        {
+            // Calculate reflect vector. v = v - 2 * dot(v, n) * n. but the triangle is clockwise or not.
+            pos = pos - vel * deltaTime;
+            vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, normalize(cross(v1 - v0, v2 - v0))) * normalize(cross(v1 - v0, v2 - v0)) * DAMP;
+		}
+	}
+
+
+    pos.xyz += vel.xyz * deltaTime;
+
+
+    velocities[id].xyz = vel;
+    positions[id].xyz = pos;
+    
+}

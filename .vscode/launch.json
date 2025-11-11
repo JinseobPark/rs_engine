@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(MSVC) Debug - SeobJJangGames",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder:Root}/rsengine_playground/OutputFiles/Debug/SeobJJangGames.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder:Root}/rsengine_playground/OutputFiles/Debug",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "Build Debug (x64)"
+        },
+        {
+            "name": "(MSVC) Release - SeobJJangGames",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder:Root}/rsengine_playground/OutputFiles/Release/SeobJJangGames.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder:Root}/rsengine_playground/OutputFiles/Release",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "Build Release (x64)"
+        }
+    ]
+}

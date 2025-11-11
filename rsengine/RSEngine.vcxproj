@@ -1,0 +1,792 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_DLL_CY|Win32">
+      <Configuration>Debug_DLL_CY</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_DLL_CY|x64">
+      <Configuration>Debug_DLL_CY</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_DLL|Win32">
+      <Configuration>Debug_DLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_DLL|x64">
+      <Configuration>Debug_DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_DLL_CY|Win32">
+      <Configuration>Release_DLL_CY</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_DLL_CY|x64">
+      <Configuration>Release_DLL_CY</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_DLL|Win32">
+      <Configuration>Release_DLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_DLL|x64">
+      <Configuration>Release_DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{6e477b05-7019-44e5-b727-87747c65c162}</ProjectGuid>
+    <RootNamespace>RSEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>RSEngine</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL_CY|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL_CY|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL_CY|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL_CY|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL_CY|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL_CY|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL_CY|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL_CY|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(ProjectDir)..\rs_engine_library\extern;$(ProjectDir)..\rs_engine_library\extern\image\freetype;$(ProjectDir)src;$(ProjectDir)extern;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\rs_engine_library\extern\lib;$(LibraryPath)</LibraryPath>
+    <TargetName>RSEngineD</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL|x64'">
+    <IncludePath>$(SolutionDir)extern;$(SolutionDir)extern\fmod\inc;$(SolutionDir)extern\image\freetype;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Lib;$(LibraryPath)</LibraryPath>
+    <TargetName>RSEngineD</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL_CY|x64'">
+    <IncludePath>$(SolutionDir)extern;$(SolutionDir)extern\fmod\inc;$(SolutionDir)extern\image\freetype;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Lib;$(LibraryPath)</LibraryPath>
+    <TargetName>RSEngineD</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(ProjectDir)..\rs_engine_library\extern\image\freetype;$(ProjectDir)..\rs_engine_library\extern;$(ProjectDir)src;$(ProjectDir)extern;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\rs_engine_library\extern\lib;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>RSEngine</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL|x64'">
+    <IncludePath>$(SolutionDir)extern;$(SolutionDir)extern\fmod\inc;$(SolutionDir)extern\image\freetype;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Lib;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>RSEngine</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL_CY|x64'">
+    <IncludePath>$(SolutionDir)extern;$(SolutionDir)extern\fmod\inc;$(SolutionDir)extern\image\freetype;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Lib;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>RSEngine</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>false</VcpkgEnabled>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL_CY|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL_CY|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;DLL_EXPORTER;_DEBUG;_CONSOLE;_SPH_DEBUG;_SPH_ENGINE;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\rs_engine_library\extern;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:char8_t- /Ylsymbol %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;freetype.lib;fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>/Ylsymbol %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)$(TargetName).lib" "$(ProjectDir)..\rs_engine_library\rs_engine\lib"
+xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(ProjectDir)..\rs_engine_library\rs_engine\headers\src"
+xcopy /E /I /Y "$(ProjectDir)extern\*.h" "$(ProjectDir)..\rs_engine_library\rs_engine\headers\extern"</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>python "$(ProjectDir)merge_shaders.py"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;DLL_EXPORTER;_DEBUG;_CONSOLE;_SPH_DEBUG_DLL;_SPH_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)extern;$(SolutionDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:char8_t- /Ylsymbol %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;freetype.lib;fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>/Ylsymbol %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)../dll_export"
+copy "$(TargetDir)$(TargetName).lib" "$(SolutionDir)../dll_export"
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DLL_CY|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;DLL_EXPORTER;_DEBUG;_CONSOLE;_SPH_DEBUG_DLL;_SPH_DEBUG_DLL_CY;_SPH_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)extern;$(SolutionDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:char8_t- /Ylsymbol %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;freetype.lib;fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalOptions>/Ylsymbol %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)../dll_export"
+copy "$(TargetDir)$(TargetName).lib" "$(SolutionDir)../dll_export"
+xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;DLL_EXPORTER;NDEBUG;_CONSOLE;_SPH_RELEASE;_SPH_ENGINE;GLEW_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\rs_engine_library\extern;$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:char8_t- /Ylsymbol %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;freetype.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)$(TargetName).lib" "$(ProjectDir)..\rs_engine_library\rs_engine\lib"
+xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(ProjectDir)..\rs_engine_library\rs_engine\headers\src"
+xcopy /E /I /Y "$(ProjectDir)extern\*.h" "$(ProjectDir)..\rs_engine_library\rs_engine\headers\extern"</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>python "$(ProjectDir)merge_shaders.py"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;DLL_EXPORTER;NDEBUG;_CONSOLE;_SPH_RELEASE_DLL;_SPH_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)extern;$(SolutionDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:char8_t- /Ylsymbol %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;freetype.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)../dll_export"
+copy "$(TargetDir)$(TargetName).lib" "$(SolutionDir)../dll_export"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_DLL_CY|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;DLL_EXPORTER;NDEBUG;_CONSOLE;_SPH_RELEASE_DLL;_SPH_RELEASE_DLL_CY;_SPH_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)extern;$(SolutionDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:char8_t- /Ylsymbol %(AdditionalOptions)</AdditionalOptions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;freetype.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)$(TargetFileName)" "$(SolutionDir)../dll_export"
+copy "$(TargetDir)$(TargetName).lib" "$(SolutionDir)../dll_export"
+xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="extern\imgui\imgui.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="extern\imgui\ImGuiFileDialog.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="extern\imgui\imgui_draw.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="extern\imgui\imgui_impl_glfw.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="extern\imgui\imgui_impl_opengl3.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="extern\imgui\imgui_tables.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="extern\imgui\imgui_widgets.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="extern\tinyfiledialogs\tinyfiledialogs.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_DLL|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_DLL_CY|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_DLL|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_DLL_CY|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_DLL|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_DLL_CY|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_DLL|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_DLL_CY|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Resource\Manager\RSMaterialManager.cpp" />
+    <ClCompile Include="src\Resource\Object\Component\Material\RSMaterial.cpp" />
+    <ClCompile Include="src\Resource\Object\Component\RSTransform.cpp" />
+    <ClCompile Include="src\Resource\Particle\PointClipper\RSPointClipper.cpp" />
+    <ClCompile Include="src\Resource\Particle\VTKViewer\RSVTKViewer.cpp" />
+    <ClCompile Include="src\Resource\Particle\Solvers\RSSCommon.cpp" />
+    <ClCompile Include="src\Resource\Particle\Solvers\RSSDynamicBruteForce.cpp" />
+    <ClCompile Include="src\Resource\Particle\Solvers\RSSDynamicCommon.cpp" />
+    <ClCompile Include="src\Resource\Particle\Solvers\RSSJustParticle.cpp" />
+    <ClCompile Include="src\Resource\Particle\Solvers\RSSNone.cpp" />
+    <ClCompile Include="src\Resource\Particle\Solvers\RSSStaticBruteForce.cpp" />
+    <ClCompile Include="src\Resource\Particle\Solvers\RSSStaticCommon.cpp" />
+    <ClCompile Include="src\Resource\Particle\Solvers\RSSStaticGrid.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSDeferredFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSFinalFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSHudFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSPickingFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSShadowMapFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSSkyboxFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSSsaoBlurFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSSsaoFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSFBO.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSSsrBlurFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSSsrFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\RSMergedShaders.cpp" />
+    <ClCompile Include="src\Resource\Widget\RSTextButtonWidget.cpp" />
+    <ClCompile Include="src\RSEngine.cpp" />
+    <ClCompile Include="src\Resource\IO\RSOBJIO.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSBufferManager.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSFileIOManager.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSParticleManager.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSPipelineManager.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSWidgetManager.cpp" />
+    <ClCompile Include="src\Resource\Object\Component\DummyParticle\RSDummyParticle.cpp" />
+    <ClCompile Include="src\Resource\Object\Component\Mesh\RSBoundingBox.cpp" />
+    <ClCompile Include="src\Resource\Object\Component\Mesh\RSGeometryGenerator.cpp" />
+    <ClCompile Include="src\Resource\Object\Component\Rigidbody\RSRigidbody.cpp" />
+    <ClCompile Include="src\Resource\Object\Component\Texture\RSSkybox.cpp" />
+    <ClCompile Include="src\Resource\Object\Camera\RSCamera.cpp" />
+    <ClCompile Include="src\Resource\Object\Camera\CameraV2.cpp" />
+    <ClCompile Include="src\Resource\Object\Component\Mesh\RSMesh.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSMeshManager.cpp" />
+    <ClCompile Include="src\Resource\IO\RSSTLIO.cpp" />
+    <ClCompile Include="src\Resource\Object\Component\Model\RSModel.cpp" />
+    <ClCompile Include="src\Resource\Object\Component\RSObjectBase.h" />
+    <ClCompile Include="src\Resource\Object\Component\Texture\RSTexture.cpp" />
+    <ClCompile Include="src\Resource\Object\RSObject.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSObjectManager.cpp" />
+    <ClCompile Include="src\Resource\Particle\RSParticleSystem.cpp" />
+    <ClCompile Include="src\Resource\Particle\RSParticleSimulator.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSResourceManager.cpp" />
+    <ClCompile Include="src\Resource\Widget\Legend\RSLegendWidget.cpp" />
+    <ClCompile Include="src\Resource\Widget\RSMeshWidget.cpp" />
+    <ClCompile Include="src\Resource\Widget\RSButtonWidget.cpp" />
+    <ClCompile Include="src\Resource\Widget\DirectionView\RSDirectionView.cpp" />
+    <ClCompile Include="src\Resource\Widget\Gizmo\RSGizmo.cpp" />
+    <ClCompile Include="src\Resource\Widget\Gizmo\RSGizmoWidget.cpp" />
+    <ClCompile Include="src\Resource\Widget\RSTextWidget.cpp" />
+    <ClCompile Include="src\Resource\Widget\RSWidgetBase.cpp" />
+    <ClCompile Include="src\Systems\Application\RSApplication.cpp" />
+    <ClCompile Include="src\Systems\EventHandler\RSEventHandler.cpp" />
+    <ClCompile Include="src\Systems\Graphics\RSGraphics.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\RSShader.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSShaderManager.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSTextureManager.cpp" />
+    <ClCompile Include="src\Systems\Input\RSInputClass.cpp" />
+    <ClCompile Include="src\Systems\Input\RSKeyBind.cpp" />
+    <ClCompile Include="src\Resource\RSImguiHandler.cpp" />
+    <ClCompile Include="src\Systems\Physics\RSPhysics.cpp" />
+    <ClCompile Include="src\Systems\State\RSState.cpp" />
+    <ClCompile Include="src\Systems\Timer\RSDebugTimer.cpp" />
+    <ClCompile Include="src\Systems\Timer\RSTimer.cpp" />
+    <ClCompile Include="src\Util\RSLogger.cpp" />
+    <ClCompile Include="src\Util\RSSimplePainter.cpp" />
+    <ClCompile Include="src\Util\RSUtilFunctions.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="extern\GL\glew.h" />
+    <ClInclude Include="extern\imgui\imconfig.h" />
+    <ClInclude Include="extern\imgui\imgui.h" />
+    <ClInclude Include="extern\imgui\ImGuiFileDialog.h" />
+    <ClInclude Include="extern\imgui\ImGuiFileDialogConfig.h" />
+    <ClInclude Include="extern\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="extern\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="extern\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="extern\imgui\imgui_internal.h" />
+    <ClInclude Include="extern\imgui\imstb_rectpack.h" />
+    <ClInclude Include="extern\imgui\imstb_textedit.h" />
+    <ClInclude Include="extern\imgui\imstb_truetype.h" />
+    <ClInclude Include="extern\tinyfiledialogs\tinyfiledialogs.h" />
+    <ClInclude Include="src\Define\DLL_header.h" />
+    <ClInclude Include="src\Define\RSGeometryData.h" />
+    <ClInclude Include="src\Define\RSPipelineList.h" />
+    <ClInclude Include="src\Define\RSWidgetData.h" />
+    <ClInclude Include="src\pch.h" />
+    <ClInclude Include="src\Resource\IO\RSOBJIO.h" />
+    <ClInclude Include="src\Resource\Manager\RSBufferManager.h" />
+    <ClInclude Include="src\Resource\Manager\RSFileIOManager.h" />
+    <ClInclude Include="src\Resource\Manager\RSMaterialManager.h" />
+    <ClInclude Include="src\Resource\Manager\RSParticleManager.h" />
+    <ClInclude Include="src\Resource\Manager\RSPipelineManager.h" />
+    <ClInclude Include="src\Resource\Manager\RSWidgetManager.h" />
+    <ClInclude Include="src\Resource\Object\Camera\RSCameraBase.h" />
+    <ClInclude Include="src\Resource\Object\Camera\RSCamera.h" />
+    <ClInclude Include="src\Resource\Object\Camera\CameraV2.h" />
+    <ClInclude Include="src\Resource\Object\Component\Material\RSMaterial.h" />
+    <ClInclude Include="src\Resource\Object\Component\RSComponent.h" />
+    <ClInclude Include="src\Resource\Object\Component\RSComponentHeader.h" />
+    <ClInclude Include="src\Resource\Object\Component\RSComponentType.h" />
+    <ClInclude Include="src\Resource\Object\Component\DummyParticle\RSDummyParticle.h" />
+    <ClInclude Include="src\Resource\Object\Component\Mesh\RSBoundingBox.h" />
+    <ClInclude Include="src\Resource\Object\Component\Mesh\RSGeometryGenerator.h" />
+    <ClInclude Include="src\Resource\Object\Component\Mesh\RSMesh.h" />
+    <ClInclude Include="src\Resource\Manager\RSMeshManager.h" />
+    <ClInclude Include="src\Resource\IO\RSSTLIO.h" />
+    <ClInclude Include="src\Resource\Object\Component\Model\RSModel.h" />
+    <ClInclude Include="src\Resource\Object\Component\Rigidbody\RSRigidbody.h" />
+    <ClInclude Include="src\Resource\Object\Component\Texture\RSSkybox.h" />
+    <ClInclude Include="src\Resource\Object\Component\Texture\RSTexture.h" />
+    <ClInclude Include="src\Resource\Object\Component\RSTransform.h" />
+    <ClInclude Include="src\Resource\Object\RSObject.h" />
+    <ClInclude Include="src\Resource\Manager\RSObjectManager.h" />
+    <ClInclude Include="src\Resource\Particle\PointClipper\RSPointClipper.h" />
+    <ClInclude Include="src\Resource\Particle\RSParticleSimulator.h" />
+    <ClInclude Include="src\Resource\Particle\RSParticleSystem.h" />
+    <ClInclude Include="src\Resource\Particle\VTKViewer\RSVTKViewer.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSDeferredFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSFBOHeader.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSFinalFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSHudFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSPickingFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSShadowMapFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSSkyboxFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSSsaoBlurFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSSsaoFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSFBO.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSSsrBlurFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSSsrFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\RSMergedShaders.h" />
+    <ClInclude Include="src\Define\RSGizmoMeshData.h" />
+    <ClInclude Include="src\Resource\Widget\Legend\RSLegendWidget.h" />
+    <ClInclude Include="src\Resource\Widget\RSMeshWidget.h" />
+    <ClInclude Include="src\Resource\Widget\RSButtonWidget.h" />
+    <ClInclude Include="src\Resource\Widget\DirectionView\RSDirectionView.h" />
+    <ClInclude Include="src\Resource\Widget\Gizmo\RSGizmo.h" />
+    <ClInclude Include="src\Resource\Widget\Gizmo\RSGizmoWidget.h" />
+    <ClInclude Include="src\Resource\Widget\RSTextButtonWidget.h" />
+    <ClInclude Include="src\Resource\Widget\RSTextWidget.h" />
+    <ClInclude Include="src\Resource\Widget\RSWidgetBase.h" />
+    <ClInclude Include="src\Systems\EventHandler\RSEventHandler.h" />
+    <ClInclude Include="src\Systems\EventHandler\RSEventItem.h" />
+    <ClInclude Include="src\Systems\Input\RSKeyBind.h" />
+    <ClInclude Include="src\RSEngine.h" />
+    <ClInclude Include="src\Resource\RSGraphicsData.h" />
+    <ClInclude Include="src\Resource\Manager\RSResourceManager.h" />
+    <ClInclude Include="src\Systems\Application\RSApplication.h" />
+    <ClInclude Include="src\Systems\Graphics\RSGraphics.h" />
+    <ClInclude Include="src\Resource\Pipeline\RSShader.h" />
+    <ClInclude Include="src\Resource\Manager\RSShaderManager.h" />
+    <ClInclude Include="src\Resource\Manager\RSTextureManager.h" />
+    <ClInclude Include="src\Systems\Input\RSInputClass.h" />
+    <ClInclude Include="src\Resource\RSImguiHandler.h" />
+    <ClInclude Include="src\Systems\Physics\RSPhysics.h" />
+    <ClInclude Include="src\Systems\State\RSState.h" />
+    <ClInclude Include="src\Systems\RSSystemComponent.h" />
+    <ClInclude Include="src\Systems\RSSystemHeader.h" />
+    <ClInclude Include="src\Systems\Timer\RSDebugTimer.h" />
+    <ClInclude Include="src\Systems\Timer\RSTimer.h" />
+    <ClInclude Include="src\Define\RSDefine.h" />
+    <ClInclude Include="src\Util\RSLogger.h" />
+    <ClInclude Include="src\Util\RSLogger_define.h" />
+    <ClInclude Include="src\Util\RSSimplePainter.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resources\InitLoadFiles\Skybox\mintverse_back.png" />
+    <Image Include="resources\InitLoadFiles\Skybox\mintverse_down.png" />
+    <Image Include="resources\InitLoadFiles\Skybox\mintverse_front.png" />
+    <Image Include="resources\InitLoadFiles\Skybox\mintverse_left.png" />
+    <Image Include="resources\InitLoadFiles\Skybox\mintverse_right.png" />
+    <Image Include="resources\InitLoadFiles\Skybox\mintverse_up.png" />
+    <Image Include="resources\InitLoadFiles\Skybox\top.png" />
+    <Image Include="resources\InitLoadFiles\Textures\ddungi.png" />
+    <Image Include="resources\InitLoadFiles\Textures\ddungi_icon.png" />
+    <Image Include="resources\InitLoadFiles\Textures\default.png" />
+    <Image Include="resources\InitLoadFiles\Textures\default_particle.png" />
+    <Image Include="resources\InitLoadFiles\Textures\heart.png" />
+    <Image Include="resources\InitLoadFiles\Textures\hourglass.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resources\GLSL\ComputeCMUDensity.comp" />
+    <None Include="resources\GLSL\ComputeCMUForce.comp" />
+    <None Include="resources\GLSL\ComputeCMUPost.comp" />
+    <None Include="resources\GLSL\ComputeGridAcc.comp" />
+    <None Include="resources\GLSL\ComputeGridBatch.comp" />
+    <None Include="resources\GLSL\ComputeGridDensity.comp" />
+    <None Include="resources\GLSL\ComputeGridInit.comp" />
+    <None Include="resources\GLSL\ComputeGridPost.comp" />
+    <None Include="resources\GLSL\ComputeGridSPH.comp" />
+    <None Include="resources\GLSL\ComputeParticles.comp" />
+    <None Include="resources\GLSL\ComputeParticlesSPH.comp" />
+    <None Include="resources\GLSL\ComputeParticleTriBuffer.comp" />
+    <None Include="resources\GLSL\ComputeSPH_pressure.comp" />
+    <None Include="resources\GLSL\ComputeTrace.comp" />
+    <None Include="resources\GLSL\default.frag" />
+    <None Include="resources\GLSL\default.vert" />
+    <None Include="resources\GLSL\DefaultMVP.frag" />
+    <None Include="resources\GLSL\DefaultMVP.vert" />
+    <None Include="resources\GLSL\DefaultMVPL.frag" />
+    <None Include="resources\GLSL\DefaultMVPL.vert" />
+    <None Include="resources\GLSL\DefaultMVPLT.frag" />
+    <None Include="resources\GLSL\DefaultMVPLT.vert" />
+    <None Include="resources\GLSL\DefaultMVPLT_Opaque.frag" />
+    <None Include="resources\GLSL\DefaultMVPLT_Opaque.vert" />
+    <None Include="resources\GLSL\DefaultParticle.frag" />
+    <None Include="resources\GLSL\DefaultParticle.vert" />
+    <None Include="resources\GLSL\Depth.frag" />
+    <None Include="resources\GLSL\Depth.vert" />
+    <None Include="resources\GLSL\DynamicComputeDensity.comp" />
+    <None Include="resources\GLSL\DynamicComputeForce.comp" />
+    <None Include="resources\GLSL\DynamicComputePost.comp" />
+    <None Include="resources\GLSL\DynamicInOutFlowBatch.comp" />
+    <None Include="resources\GLSL\DynamicInOutFlowCreator.comp" />
+    <None Include="resources\GLSL\HUDPicking.frag" />
+    <None Include="resources\GLSL\HUDPicking.vert" />
+    <None Include="resources\GLSL\HudText.frag" />
+    <None Include="resources\GLSL\HudText.vert" />
+    <None Include="resources\GLSL\HudTexture.frag" />
+    <None Include="resources\GLSL\HudTexture.vert" />
+    <None Include="resources\GLSL\ParticleDefaultShader.frag" />
+    <None Include="resources\GLSL\ParticleDefaultShader.vert" />
+    <None Include="resources\GLSL\ParticleDefaultShader_backup.frag" />
+    <None Include="resources\GLSL\PointCloudShader.frag" />
+    <None Include="resources\GLSL\PointCloudShader.vert" />
+    <None Include="resources\GLSL\PointMultiFloatVtk.frag" />
+    <None Include="resources\GLSL\PointMultiFloatVtk.vert" />
+    <None Include="resources\GLSL\PointSingleFloatVtk.frag" />
+    <None Include="resources\GLSL\PointSingleFloatVtk.vert" />
+    <None Include="resources\GLSL\PointSingleUintVtk.frag" />
+    <None Include="resources\GLSL\PointSingleUintVtk.vert" />
+    <None Include="resources\GLSL\QuadTexture.frag" />
+    <None Include="resources\GLSL\QuadTexture.vert" />
+    <None Include="resources\GLSL\QuadTextureR32.frag" />
+    <None Include="resources\GLSL\QuadTextureR32.vert" />
+    <None Include="resources\GLSL\Quad_Debug.frag" />
+    <None Include="resources\GLSL\Quad_Debug.vert" />
+    <None Include="resources\GLSL\ShadowMapping.frag" />
+    <None Include="resources\GLSL\ShadowMapping.vert" />
+    <None Include="resources\GLSL\Skybox.frag" />
+    <None Include="resources\GLSL\Skybox.vert" />
+    <None Include="resources\GLSL\SolidColor.frag" />
+    <None Include="resources\GLSL\SolidColor.vert" />
+    <None Include="resources\InitLoadFiles\GIZMO\at_x.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\at_y.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\at_z.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\r_x.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\r_y.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\r_z.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\s_c.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\s_x.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\s_y.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\s_z.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\t_c.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\t_x.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\t_y.stl" />
+    <None Include="resources\InitLoadFiles\GIZMO\t_z.stl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,256 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build RSEngine Debug (x64)",
+            "type": "shell",
+            "command": "msbuild",
+            "args": [
+                "rsengine_playground/SPH_MINT.sln",
+                "/p:Configuration=Debug",
+                "/p:Platform=x64",
+                "/t:RSEngine",
+                "/m"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:Root}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/d", "/c",
+                        "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\"", "&&"
+                    ]
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "detail": "Build RSEngine static library (Debug x64)"
+        },
+        {
+            "label": "Build RSEngine Release (x64)",
+            "type": "shell",
+            "command": "msbuild",
+            "args": [
+                "rsengine_playground/SPH_MINT.sln",
+                "/p:Configuration=Release",
+                "/p:Platform=x64",
+                "/t:RSEngine",
+                "/m"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:Root}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/d", "/c",
+                        "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\"", "&&"
+                    ]
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "detail": "Build RSEngine static library (Release x64)"
+        },
+        {
+            "label": "Build SeobJJangGames Debug (x64)",
+            "type": "shell",
+            "command": "msbuild",
+            "args": [
+                "rsengine_playground/SPH_MINT.sln",
+                "/p:Configuration=Debug",
+                "/p:Platform=x64",
+                "/t:SeobJJangGames",
+                "/m"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:Root}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/d", "/c",
+                        "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\"", "&&"
+                    ]
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "detail": "Build SeobJJangGames application (Debug x64)",
+            "dependsOn": ["Build RSEngine Debug (x64)"]
+        },
+        {
+            "label": "Build SeobJJangGames Release (x64)",
+            "type": "shell",
+            "command": "msbuild",
+            "args": [
+                "rsengine_playground/SPH_MINT.sln",
+                "/p:Configuration=Release",
+                "/p:Platform=x64",
+                "/t:SeobJJangGames",
+                "/m"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:Root}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/d", "/c",
+                        "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\"", "&&"
+                    ]
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "detail": "Build SeobJJangGames application (Release x64)",
+            "dependsOn": ["Build RSEngine Release (x64)"]
+        },
+        {
+            "label": "Build Debug (x64)",
+            "type": "shell",
+            "command": "msbuild",
+            "args": [
+                "rsengine_playground/SPH_MINT.sln",
+                "/p:Configuration=Debug",
+                "/p:Platform=x64",
+                "/m"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:Root}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/d", "/c",
+                        "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\"", "&&"
+                    ]
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Build entire solution (Debug x64)"
+        },
+        {
+            "label": "Build Release (x64)",
+            "type": "shell",
+            "command": "msbuild",
+            "args": [
+                "rsengine_playground/SPH_MINT.sln",
+                "/p:Configuration=Release",
+                "/p:Platform=x64",
+                "/m"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:Root}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/d", "/c",
+                        "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\"", "&&"
+                    ]
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "detail": "Build entire solution (Release x64)"
+        },
+        {
+            "label": "Clean Debug (x64)",
+            "type": "shell",
+            "command": "msbuild",
+            "args": [
+                "rsengine_playground/SPH_MINT.sln",
+                "/p:Configuration=Debug",
+                "/p:Platform=x64",
+                "/t:Clean"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:Root}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/d", "/c",
+                        "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\"", "&&"
+                    ]
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "detail": "Clean Debug build artifacts"
+        },
+        {
+            "label": "Clean Release (x64)",
+            "type": "shell",
+            "command": "msbuild",
+            "args": [
+                "rsengine_playground/SPH_MINT.sln",
+                "/p:Configuration=Release",
+                "/p:Platform=x64",
+                "/t:Clean"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:Root}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/d", "/c",
+                        "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\"", "&&"
+                    ]
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "detail": "Clean Release build artifacts"
+        },
+        {
+            "label": "Rebuild Debug (x64)",
+            "type": "shell",
+            "command": "msbuild",
+            "args": [
+                "rsengine_playground/SPH_MINT.sln",
+                "/p:Configuration=Debug",
+                "/p:Platform=x64",
+                "/t:Rebuild",
+                "/m"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:Root}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/d", "/c",
+                        "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\"", "&&"
+                    ]
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "detail": "Clean and rebuild Debug (x64)"
+        },
+        {
+            "label": "Rebuild Release (x64)",
+            "type": "shell",
+            "command": "msbuild",
+            "args": [
+                "rsengine_playground/SPH_MINT.sln",
+                "/p:Configuration=Release",
+                "/p:Platform=x64",
+                "/t:Rebuild",
+                "/m"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:Root}",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/d", "/c",
+                        "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat\"", "&&"
+                    ]
+                }
+            },
+            "problemMatcher": "$msCompile",
+            "group": "build",
+            "detail": "Clean and rebuild Release (x64)"
+        }
+    ]
+}

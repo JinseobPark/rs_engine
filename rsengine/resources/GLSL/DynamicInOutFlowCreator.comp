@@ -1,0 +1,151 @@
+//#version 450
+//
+//layout (local_size_x = 1024) in;
+//
+//const int MAX_CREATED_PARTICLE = 1024;
+//struct RSInflowData
+//{
+//    vec4 inflows_pos[MAX_CREATED_PARTICLE]; 
+//	uvec4 inflows_use[MAX_CREATED_PARTICLE]; 
+//
+//	uint current_count;
+//	uint max_particle_count;
+//	uint inflow_creater_size;
+//	uint padding;
+//};
+//
+//
+//layout (std430, binding = 0) buffer PositionBuffer {
+//    vec4 positions[];
+//};
+//
+//layout (std430, binding = 1) buffer VelocityBuffer {
+//    vec4 velocities[]; // velocity xyz, pressure w
+//};
+//
+//// acceleration xyz, current zone w.
+//// w = 0~1023 : in inflow zone
+//// w = -1 : not in any zone
+//// w = -2 : in fluid zone
+//// w = -3 : in outflow zone.
+//layout (std430, binding = 2) buffer AccelerationBuffer {
+//    vec4 accelerations[]; 
+//};
+//
+//// position xyz, activate w
+//// w = 0 : not activated. w = 1 : activated.
+//layout (std430, binding = 6) buffer InflowDataBuffer {
+//    //vec4 inflows[MAX_CREATED_PARTICLE]; 
+//	RSInflowData in_flow_data;
+//};
+//
+//
+//
+//uniform vec3 inflow_position;
+//uniform vec3 inflow_velocity;
+//uniform vec3 inflow_zone_size;
+//
+//uniform vec3 outflow_position;
+//uniform vec3 outflow_zone_size;
+//
+//void main() {
+//    uint id = gl_GlobalInvocationID.x;
+//	
+//	if(id >= in_flow_data.inflow_creater_size) 
+//		return;
+//
+//	if(in_flow_data.inflows_use[id].x <= 0) 
+//	{
+//		for(uint i = 0; i < positions.length(); i += 1) 
+//		{
+//			if(accelerations[i].w == -1) 
+//			{
+//				in_flow_data.inflows_use[id].x = 1;
+//				barrier();
+//					
+//				if(in_flow_data.current_count >= in_flow_data.max_particle_count) 
+//					return;
+//				//in_flow_data.inflows_use[id].x = 1;
+//				positions[i].xyz = inflow_position + in_flow_data.inflows_pos[id].xyz;
+//				velocities[i] = vec4(inflow_velocity, 0.0);
+//				accelerations[i] = vec4(0.0, 0.0, 0.0, id);
+//				atomicAdd(in_flow_data.current_count, 1);
+//				barrier();
+//				return;
+//			}
+//		}
+//
+//	}
+//}
+//
+
+///////////////////
+#version 450
+
+layout (local_size_x = 1024) in;
+
+const int MAX_CREATED_PARTICLE = 1024;
+struct RSInflowData
+{
+    vec4 inflows_pos[MAX_CREATED_PARTICLE]; 
+    uvec4 inflows_use[MAX_CREATED_PARTICLE]; 
+
+    uint current_count;
+    uint max_particle_count;
+    uint inflow_creator_size;
+    uint padding;
+};
+
+layout (std430, binding = 0) buffer PositionBuffer {
+    vec4 positions[];
+};
+
+layout (std430, binding = 1) buffer VelocityBuffer {
+    vec4 velocities[]; // velocity xyz, pressure w
+};
+
+layout (std430, binding = 2) buffer AccelerationBuffer {
+    vec4 accelerations[];
+};
+
+layout (std430, binding = 6) buffer InflowDataBuffer {
+    RSInflowData in_flow_data;
+};
+
+uniform vec3 inflow_position;
+uniform vec3 inflow_velocity;
+uniform mat4 inflow_rotate_mat;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    // id start 1
+    if (id >= in_flow_data.inflow_creator_size) 
+        return;
+
+    //if (atomicCompSwap(in_flow_data.inflows_use[id].x, 0, 1) == 0) {
+    if (in_flow_data.inflows_use[id].x  == 0) {
+
+//        uint current_particle_index = atomicAdd(in_flow_data.current_count, 1);
+        if (in_flow_data.current_count >= in_flow_data.max_particle_count) {
+            atomicAdd(in_flow_data.current_count, -1);
+//            atomicCompSwap(in_flow_data.inflows_use[id].x, 1, 0);
+            atomicExchange(in_flow_data.inflows_use[id].x, 0);
+            barrier();
+            return;
+        }
+
+        for (uint i = id; i < positions.length(); i += in_flow_data.inflow_creator_size) {
+            if (accelerations[i].w > -1.5 && accelerations[i].w < -0.5) {
+                atomicAdd(in_flow_data.current_count, 1);
+                atomicExchange(in_flow_data.inflows_use[id].x, 1);
+                barrier();
+                positions[i].xyz = inflow_position + mat3(inflow_rotate_mat) * in_flow_data.inflows_pos[id].xyz;
+                velocities[i] = vec4(inflow_velocity, 0.0);
+                accelerations[i] = vec4(0.0, 0.0, 0.0, float(id));
+        //        atomicCompSwap(in_flow_data.inflows_use[id].x, 1, 0);
+                return;
+            }
+        }
+
+    }
+}

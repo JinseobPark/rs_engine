@@ -1,0 +1,2 @@
+https://medium.com/@savas/nomad-game-engine-part-7-the-event-system-45a809ccb68f
+https://denyskryvytskyi.github.io/event-system

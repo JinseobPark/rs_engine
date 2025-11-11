@@ -1,0 +1,162 @@
+#version 450
+#extension GL_ARB_shader_atomic_counters : enable
+#extension ARB_shader_atomic_counter_ops : enable
+
+
+
+
+layout (local_size_x = 256) in;
+
+const int MAX_CREATED_PARTICLE = 1024;
+//struct RSInflowData
+//{
+//    vec4 inflows[MAX_CREATED_PARTICLE]; 
+//	uint current_count;
+//	uint max_particle_count;
+//	uint inflow_creator_size;
+//	uint padding;
+//};
+struct RSInflowData
+{
+    vec4 inflows_pos[MAX_CREATED_PARTICLE]; 
+	uvec4 inflows_use[MAX_CREATED_PARTICLE]; 
+
+	uint current_count;
+	uint max_particle_count;
+	uint inflow_creator_size;
+	uint padding;
+};
+
+layout (std430, binding = 0) buffer PositionBuffer {
+    vec4 positions[];
+};
+
+layout (std430, binding = 1) buffer VelocityBuffer {
+    vec4 velocities[]; // velocity xyz, pressure w
+};
+
+// acceleration xyz, current zone w.
+// w = 0~1023 : in inflow zone
+// w = -1 : not in any zone
+// w = -2 : in fluid zone
+// w = -3 : in outflow zone.
+layout (std430, binding = 2) buffer AccelerationBuffer {
+    vec4 accelerations[]; 
+};
+
+// position xyz, activate w
+// w = 0 : not activated. w = 1 : activated.
+layout (std430, binding = 6) buffer InflowDataBuffer {
+    //vec4 inflows[MAX_CREATED_PARTICLE]; 
+	RSInflowData in_flow_data;
+};
+
+
+//uniform vec4 inflow_create_particles[MAX_CREATED_PARTICLE];
+
+uniform vec3 inflow_position;
+uniform vec3 inflow_velocity;
+uniform vec3 inflow_zone_size;
+
+uniform vec3 outflow_position;
+uniform vec3 outflow_zone_size;
+
+
+//shared uint created_particle_count = 0;
+//
+//uniform uint to_create_particle_count = 10;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x ;
+
+    // 1. check the particle is where by accelerations[].w. 
+    // 2. if w = -3, then inactivate the particle. write accelerations[].w = -1. created_particle_count--;
+    // 3. if w = -2, then check the particle is in outflow zone. if it is, then write accelerations[].w = -3.
+    // 4. if w = 0~1023, then check the particle is in inflow zone. unless it is, then write accelerations[].w = -2.
+    //    and inflows[].w = 0, to_create_particle_count++. 
+    //
+    // 5. if(id > 1023) then continue.
+    // if(inflows[id].w == 0) then find to creat a particle from accelerations[].w == -1.
+    // 
+
+	// Limit the number of created particles.
+    if(id >= positions.length()) {
+		return;
+	}
+
+
+	// Check the particle is in inflow zone. Unless it is, write accelerations[].w = -2. 
+	// and inflows[].w = 0, to_create_particle_count++.
+	if(accelerations[id].w > -0.5 && accelerations[id].w < in_flow_data.inflow_creator_size) {
+		if(!(	positions[id].x > inflow_position.x - inflow_zone_size.x * 0.52f && positions[id].x < inflow_position.x + inflow_zone_size.x * 0.52f &&
+				positions[id].y > inflow_position.y - inflow_zone_size.y * 0.52f && positions[id].y < inflow_position.y + inflow_zone_size.y * 0.52f &&
+				positions[id].z > inflow_position.z - inflow_zone_size.z * 0.52f && positions[id].z < inflow_position.z + inflow_zone_size.z * 0.52f)) {
+			uint inflow_id = uint(accelerations[id].w);
+//			in_flow_data.inflows_use[inflow_id].x = 0;
+//			atomicCompSwap(in_flow_data.inflows_use[id].x, 0, 1);
+			accelerations[id].w = -2.0;
+			atomicAdd(in_flow_data.inflows_use[inflow_id].x, -1);
+			//atomicExchange(in_flow_data.inflows_use[inflow_id].x, 0);
+			barrier();
+		}
+	}
+    // Check the particle is where by accelerations[id].w
+    else if(accelerations[id].w < -2.5) 
+	{
+		accelerations[id].w = -1.0;
+		//in_flow_data.current_count--;
+		atomicAdd(in_flow_data.current_count, -1);
+		barrier();
+	} 
+	// Check the particle is in outflow zone. If it is, write accelerations[].w = -3.
+	else if(accelerations[id].w < -1.5) {
+		if(positions[id].x > outflow_position.x - outflow_zone_size.x * 0.51f && positions[id].x < outflow_position.x + outflow_zone_size.x * 0.51f &&
+		   positions[id].y > outflow_position.y - outflow_zone_size.y * 0.51f && positions[id].y < outflow_position.y + outflow_zone_size.y * 0.51f &&
+		   positions[id].z > outflow_position.z - outflow_zone_size.z * 0.51f && positions[id].z < outflow_position.z + outflow_zone_size.z * 0.51f) 
+		   {
+			accelerations[id].w = -3.0;
+//			atomicExchange(accelerations[id].w, -1.0);
+	//		atomicAdd(in_flow_data.current_count, -1);
+			//in_flow_data.current_count--;
+//			accelerations[id].w = -1;
+			barrier();
+		}
+	} 
+			barrier();
+
+//	barrier();
+//
+//	if(in_flow_data.current_count >= in_flow_data.max_particle_count) 
+//	{
+//		return;
+//	}
+//
+//	if(id < in_flow_data.inflow_creater_size) {
+//
+////	if(in_flow_data.current_count >= MAX_CREATED_PARTICLE) {
+////		return;
+////	}
+////	barrier();
+//			
+//
+//	if(in_flow_data.inflows[id].w == 0) 
+//	{
+//		barrier();
+//		for(uint i = 0; i < positions.length(); i++) 
+//		{
+//			if(accelerations[i].w == -1) 
+//			{
+//				in_flow_data.inflows[id].w = 1;
+//				positions[i] = vec4(inflow_position.xyz + in_flow_data.inflows[id].xyz, 1.0);
+//				velocities[i] = vec4(inflow_velocity, 0.0);
+//				accelerations[i] = vec4(0.0, 0.0, 0.0, id);
+//				in_flow_data.current_count++;
+//				barrier();
+//				return;
+//			}
+//		}
+//
+//    }
+//		return;
+//	}
+}

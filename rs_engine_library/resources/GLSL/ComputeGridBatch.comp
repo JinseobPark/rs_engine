@@ -1,0 +1,44 @@
+#version 460
+
+layout (local_size_x = 256) in;
+
+layout (std430, binding = 0) buffer PositionBuffer {
+    vec4 positions[];
+};
+
+layout (std430, binding = 3) buffer GridBuffer {
+    int grid[];
+};
+
+layout (std430, binding = 4) buffer GridCountBuffer {
+    int gridCount[];
+};
+
+uniform vec3 grid_size;// = vec3(20, 60, 20); // Size of the grid in world space
+uniform ivec3 grid_resolution;// = ivec3(10, 10, 10); // Number of cells in each dimension
+uniform vec3 grid_min_boundary;// = vec3(-10, -30, -10);// Min boundary of the grid in world space
+uniform uint particle_max_count_cell;// = 20;
+
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    if(id >= positions.length()) {
+		return;
+	}
+    vec3 pos = positions[id].xyz; 
+    
+    vec3 cell_size = grid_size / vec3(grid_resolution);
+
+    ivec3 cell_index = ivec3(floor((pos - grid_min_boundary) / cell_size));
+
+    int flat_index = cell_index.x + cell_index.y * grid_resolution.x + cell_index.z * (grid_resolution.x * grid_resolution.y);
+
+    // Atomic add to ensure thread safety
+    uint count = atomicAdd(gridCount[flat_index], 1);
+
+    // Write particle index to grid
+    if (count < particle_max_count_cell) {
+        grid[flat_index * particle_max_count_cell + count] = int(id);
+    }
+
+}

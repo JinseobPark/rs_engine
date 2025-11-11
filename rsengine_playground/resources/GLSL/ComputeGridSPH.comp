@@ -1,0 +1,91 @@
+
+#version 430
+
+layout (local_size_x = 1024) in;
+
+layout (std430, binding = 0) buffer PositionBuffer {
+    vec4 positions[]; // position xyz, density in w
+};
+
+layout (std430, binding = 1) buffer VelocityBuffer {
+    vec4 velocities[]; // velocity xyz, density out w
+};
+
+layout (std430, binding = 2) buffer AccelerationBuffer {
+    vec4 accelerations[]; // acceleration xyz, dummy w
+};
+
+layout (std430, binding = 3) buffer GridBuffer {
+    int grid[];
+};
+
+layout (std430, binding = 4) buffer GridCountBuffer {
+    int gridCount[];
+};
+
+uniform vec3 gridSize;
+uniform ivec3 gridResolution;
+uniform float smoothingLength;
+uniform vec3 grid_min_boundary; // Min boundary of the grid in world space
+uniform uint particle_max_count_cell;
+
+uniform float particle_radius = 0.1f;
+uniform float collision_stiffness = 100.0f; // Stiffness of the collision response
+uniform float deltaTime;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+        if(id >= positions.length()) {
+		return;
+	}
+    vec3 pos = positions[id].xyz;
+    vec4 vel = velocities[id];
+
+    vec3 cellSize = gridSize / gridResolution;
+
+    vec3 normalizedPos = (pos - grid_min_boundary) / gridSize; // vec3  0~1 
+    vec3 grid_resolution = vec3(gridResolution);
+    ivec3 cellIndex = ivec3(floor(normalizedPos * ivec3(100) / grid_resolution));
+
+    /*
+    // Compute grid cell index
+    cellIndex = clamp(cellIndex, ivec3(0), gridResolution - ivec3(1));
+    ivec3 cellIndex = ivec3(floor(pos / gridSize * gridResolution));
+    */
+
+    // Loop over neighboring cells
+    vec3 force = vec3(0.0);
+    for (int z = -1; z <= 1; ++z) {
+        for (int y = -1; y <= 1; ++y) {
+            for (int x = -1; x <= 1; ++x) {
+
+                ivec3 neighborCellIndex = cellIndex + ivec3(x, y, z);
+                if (neighborCellIndex.x < 0 || neighborCellIndex.y < 0 || neighborCellIndex.z < 0 ||
+                    neighborCellIndex.x >= gridResolution.x || neighborCellIndex.y >= gridResolution.y || neighborCellIndex.z >= gridResolution.z) {
+                    continue;
+                }
+
+                int flatIndex = neighborCellIndex.x + neighborCellIndex.y * int(gridResolution.x) + neighborCellIndex.z * int(gridResolution.x * gridResolution.y);
+                int neighborCount = gridCount[flatIndex];
+
+                for (int i = 0; i < neighborCount; ++i) {
+                    int neighborIndex = grid[flatIndex * particle_max_count_cell + i];
+                    if (neighborIndex == int(id)) continue;
+
+                    vec3 neighborPos = positions[neighborIndex].xyz;
+                    vec3 r = pos - neighborPos;
+                    float rLen = length(r);
+
+
+                    if (rLen < smoothingLength) {
+                        float q = rLen / smoothingLength;
+                        force += (1.0 - q) * normalize(r);
+
+                    }
+                }
+            }
+        }
+    }
+
+    accelerations[id] = vec4(force, 0.0);
+}

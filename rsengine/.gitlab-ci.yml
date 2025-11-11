@@ -1,0 +1,37 @@
+# RSEngine Doxygen build pipeline
+#
+# WARNING: MAKE SURE YOU INSTALL DEPENDANCY!
+#
+# For debian based:
+# apt update
+# apt install texlive-full build-essential doxygen graphviz python3 -y
+#
+# For alpine based (i.e. Gitlab runner):
+# apk update
+# apk add texlive-full alpine-sdk doxygen graphviz python3
+#
+# :Author: jupiterbjy@gmail.com
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+  - build
+  # - deploy
+
+build-job:
+  stage: build
+  tags:
+    - LINUX
+  before_script:
+    - whoami
+    - sudo apt update
+    - sudo apt install texlive-full build-essential doxygen graphviz python3 -y
+    - cd doxy_scripts
+    - chmod +x gen_doc.sh
+  script:
+    - ./gen_doc.sh
+  artifacts:
+    expire_in: 7 days
+    paths:
+      - "html/"
