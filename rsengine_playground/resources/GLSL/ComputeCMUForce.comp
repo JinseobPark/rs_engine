@@ -24,91 +24,79 @@ uniform float u_viscosity = 3000.0f;
 uniform float u_density_0 = 1000.0f;
 uniform float u_gravity = 9.8f;
 
-// Gradient of the spiky kernel
-float SpikyKernel(float r, float h) {
-    if (r >= 0.0 && r <= h) {
-        float hr = (h - r);
-        return 15.0 / (3.14159265359 * pow(h, 6.0)) * hr * hr * hr;
-    } else {
-        return 0.0;
-    }
-}
-
-float ViscosityKernel(float r, float h) {
-    if (r >= 0.0 && r <= h) {
-        float r3h3 = - (r * r * r) / (2.0 * (h * h * h));
-        float r2h2 = (r * r) / (h * h);
-        float r1h1 = h / (2.0 * r);
-        return 15.0 / (3.14159265359 * pow(h, 3.0)) * (r3h3 + r2h2 + r1h1 - 1);
-    } else {
-        return 0.0;
-    }
-}
-
-// https://arxiv.org/pdf/1706.10263 page 7/26
-float KernelFunction(float r, float h)
-{
-    float s = r / h;
-    float section_data = 0.0;
-
-    if ( s >= 0.0 && s < 1.0) 
-    {
-		section_data =  s * s * s - 6 * s + 6;
-	} 
-    else if (s >= 1.0 && s < 2.0) {
-		section_data =  pow((2-s), 3.0);
-	}
-    else
-        section_data = 0.0;
-
-    return section_data / (3.0 * 3.14159265359 * pow(h, 2.0));
-}
-
 void main() {
     uint id = gl_GlobalInvocationID.x;
+    uint num_particles = positions.length();
+    
+    if(id >= num_particles) {
+        return;
+    }
 
-    vec3 pos = positions[id].xyz;
-//    accelerations[id].xyz = vec3(0.0, 0.0, 0.0);
+    // Cache frequently accessed data
+    vec3 pos_i = positions[id].xyz;
+    float density_i = positions[id].w;
+    float pressure_i = velocities[id].w;
+    vec3 vel_i = velocities[id].xyz;
+    
+    // Pre-calculate constants
     const float h = smoothing_length;
-
-    const float viscosity = u_viscosity;
+    const float h_sq = h * h;
+    const float h_6 = h_sq * h_sq * h_sq; // h^6
+    
+    // Spiky gradient kernel constant: -45 / (PI * h^6)
+    const float spiky_grad_constant = -45.0f / (PI_FLOAT * h_6);
+    
+    // Viscosity Laplacian kernel constant: 45 / (PI * h^6)
+    const float viscosity_lap_constant = 45.0f / (PI_FLOAT * h_6);
+    
     const float mass = u_particle_mass;
-
-    // Compute Density was done in another compute shader
-    vec3 force = vec3(0.0, 0.0, 0.0); // gravity
-
+    const float viscosity = u_viscosity;
     const vec3 gravity = vec3(0.0, u_gravity, 0.0);
+    
+    // Initialize force accumulators
+    vec3 pressure_force = vec3(0.0);
+    vec3 viscosity_force = vec3(0.0);
 
-    // Loop over neighboring cells
-
-
-    vec3 pressure_force = vec3(0.0, 0.0, 0.0);
-    vec3 viscosity_force = vec3(0.0, 0.0, 0.0);
-
-    //  calculate pressure force
-    for (uint i = 0; i < positions.length(); ++i) {
-        if (i != id) 
-        {
-            vec3 delta = pos - positions[i].xyz;
-            float r = length(delta);
-            if(r == 0.0)
-				continue;
-			if (r < h) {
-                pressure_force -= mass * (velocities[id].w + velocities[i].w) / (2.0f * positions[i].w) *
-                // gradient of spiky kernel
-                    -45.f / (PI_FLOAT * pow(h, 6.0)) * pow(h - r, 2.0) * normalize(delta);
-
-                viscosity_force += mass * (velocities[i].xyz - velocities[id].xyz) / positions[i].w *  
-            // Laplacian of viscosity kernel
-                45.f / (PI_FLOAT * pow(h, 6.0)) * (h - r);
-            }
+    // Loop over all particles
+    for (uint j = 0; j < num_particles; ++j) {
+        if (j == id) continue;
+        
+        vec3 delta = pos_i - positions[j].xyz;
+        float r_sq = dot(delta, delta);
+        
+        // Early exit for zero distance
+        if (r_sq < 1e-6) continue;
+        
+        if (r_sq < h_sq) {
+            float r = sqrt(r_sq);
+            float h_minus_r = h - r;
+            
+            // Normalized direction vector
+            vec3 dir = delta / r; // More efficient than normalize(delta)
+            
+            float density_j = positions[j].w;
+            float pressure_j = velocities[j].w;
+            vec3 vel_j = velocities[j].xyz;
+            
+            // Pressure force: gradient of spiky kernel
+            // -m * (P_i + P_j) / (2 * rho_j) * grad(W)
+            float h_minus_r_sq = h_minus_r * h_minus_r;
+            float pressure_term = mass * (pressure_i + pressure_j) / (2.0f * density_j);
+            pressure_force -= pressure_term * spiky_grad_constant * h_minus_r_sq * dir;
+            
+            // Viscosity force: Laplacian of viscosity kernel
+            // m * (v_j - v_i) / rho_j * lap(W)
+            viscosity_force += mass * (vel_j - vel_i) / density_j * viscosity_lap_constant * h_minus_r;
         }
     }
+    
+    // Apply viscosity coefficient
     viscosity_force *= viscosity;
-
-    vec3 external_force =  -positions[id].w * gravity;
-
-    //force = pressure_force  + external_force;
-    force = pressure_force + viscosity_force + external_force;
-    accelerations[id].xyz =  force / positions[id].w;
+    
+    // External force (gravity)
+    vec3 external_force = -density_i * gravity;
+    
+    // Total force and acceleration
+    vec3 total_force = pressure_force + viscosity_force + external_force;
+    accelerations[id].xyz = total_force / density_i;
 }

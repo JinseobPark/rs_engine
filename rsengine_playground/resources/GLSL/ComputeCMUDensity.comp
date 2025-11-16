@@ -18,82 +18,46 @@ uniform float particle_mass = 1.0f;
 uniform float u_density_0 = 1000.0f;
 uniform float u_gas_constant = 2000.0f; // Gas constant for equation of state
 
-// SPH kernel
-float Poly6Kernel(float r, float h) {
-    if (r >= 0.0 && r <= h) {
-        float hr = (h * h - r * r);
-        return 315.0 / (64.0 * 3.14159265359 * pow(h, 9.0)) * hr * hr * hr;
-    } else {
-        return 0.0;
-    }
-}
-
-//// Gradient of the spiky kernel
-//float SpikyKernel(float r, float h) {
-//    if (r >= 0.0 && r <= h) {
-//        float hr = (h - r);
-//        return 15.0 / (3.14159265359 * pow(h, 6.0)) * hr * hr * hr;
-//    } else {
-//        return 0.0;
-//    }
-//}
-
-// https://arxiv.org/pdf/1706.10263 page 7/26
-float KernelFunction(float r, float h)
-{
-    float s = r / h;
-    float section_data = 0.0;
-
-    if ( s >= 0.0 && s < 1.0) 
-    {
-		section_data =  s * s * s - 6 * s + 6;
-	} 
-    else if (s >= 1.0 && s < 2.0) {
-		section_data =  pow((2-s), 3.0);
-	}
-    else
-        section_data = 0.0;
-
-    return section_data / (3.0 * 3.14159265359 * pow(h, 2.0));
-}
-
-
-float ViscosityKernel(float r, float h) {
-    if (r >= 0.0 && r <= h) {
-        float r3h3 = - (r * r * r) / (2.0 * (h * h * h));
-        float r2h2 = (r * r) / (h * h);
-        float r1h1 = h / (2.0 * r);
-        return 15.0 / (3.14159265359 * pow(h, 3.0)) * (r3h3 + r2h2 + r1h1 - 1);
-    } else {
-        return 0.0;
-    }
-}
-
 void main() {
     uint id = gl_GlobalInvocationID.x;
-    if(id >= positions.length()) {
-		return;
-	}
-
-    float density_sum = 0.f;
-
-    // Init settings
-    float h = smoothing_length;
-
-    // Loop over neighboring cells
-    for (uint i = 0; i < positions.length(); ++i) {
-            vec3 delta = positions[id].xyz - positions[i].xyz;
-            float r = distance(positions[id].xyz, positions[i].xyz);
-//            float r = length(delta);
-			if (r < h) {
-			    density_sum += particle_mass * /* poly6 kernel */ 315.f * pow(h * h - r * r, 3) / (64.f * PI_FLOAT * pow(h, 9));
-            }
+    uint num_particles = positions.length();
+    
+    if(id >= num_particles) {
+        return;
     }
 
-    density_sum = min(density_sum, 5000.f);
-    float pressure = max(u_gas_constant * (density_sum - u_density_0), 0.f);
+    // Cache current particle position to avoid repeated buffer reads
+    vec3 pos_i = positions[id].xyz;
+    
+    // Pre-calculate constants
+    float h = smoothing_length;
+    float h_sq = h * h;
+    float h_9 = h_sq * h_sq * h_sq * h_sq * h; // h^9
+    
+    // Poly6 kernel constant: 315 / (64 * PI * h^9)
+    float poly6_constant = 315.0f / (64.0f * PI_FLOAT * h_9);
+    float kernel_coefficient = particle_mass * poly6_constant;
+    
+    float density_sum = 0.0f;
 
+    // Loop over all particles
+    for (uint j = 0; j < num_particles; ++j) {
+        vec3 delta = pos_i - positions[j].xyz;
+        float r_sq = dot(delta, delta); // r^2 (avoid sqrt)
+        
+        if (r_sq < h_sq) {
+            // Poly6 kernel: (h^2 - r^2)^3
+            float h_sq_minus_r_sq = h_sq - r_sq;
+            float kernel_value = h_sq_minus_r_sq * h_sq_minus_r_sq * h_sq_minus_r_sq;
+            density_sum += kernel_coefficient * kernel_value;
+        }
+    }
 
+    // Clamp density and compute pressure
+    density_sum = min(density_sum, 5000.0f);
+    float pressure = max(u_gas_constant * (density_sum - u_density_0), 0.0f);
+
+    // Write results
     positions[id].w = density_sum;
     velocities[id].w = pressure;
 }

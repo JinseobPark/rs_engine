@@ -64,52 +64,23 @@ void main() {
     vec3 vel = velocities[id].xyz;
     vec3 acc = accelerations[id].xyz;
 
-    // Integrate motion
-
-
     // Reflect velocity vector when the particle hits the wall
     const float DAMP = 0.3f;
-
-
-
-    
-	// Collision with the circle, then bouns back
-	//if the particle is inside the circle xyz
-    vec3 circle_center_to_particle = positions[id].xyz - circle_center;
-
-	if (dot(circle_center_to_particle, circle_center_to_particle) < circle_radius * circle_radius) {
-		// if the particle is inside the circle, then move the particle to the surface of the circle
-		pos.xyz = circle_center + normalize(circle_center_to_particle) * circle_radius;
-		// reflect the velocity vector
-		vel.xyz -= 2.0f * dot(vel.xyz, normalize(circle_center_to_particle)) * normalize(circle_center_to_particle) * 1.03f;
-	}
-	
     
     // Collision with the ground, then bounce back
     if (pos.y < 0.2 + particle_size) {
         pos.y = 0.2 + particle_size;
-//         vel.y *= -1 * DAMP;
-         //vel.y = - vel.y * DAMP;
-//         acc.xyz += 128 * vec3(0, -1, 0) * vel.xyz;
-
-        //p.velocity = p.velocity * -2 * dot(p.velocity, planeNormal) * planeNormal * bounceCoefficient
         vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, vec3(0, 1, 0)) * vec3(0, 1, 0);
-
     }
 
     // Collision with the walls, then bounce back
     if (pos.x < box_min.x + particle_size) {
         pos.x = box_min.x + particle_size;
-
-        //p.velocity = p.velocity * -2 * dot(p.velocity, planeNormal) * planeNormal * bounceCoefficient
         vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, vec3(1, 0, 0)) * vec3(1, 0, 0)* DAMP;
-
-        // vel.x = - vel.x * DAMP;
     }
     if (pos.x > box_max.x - particle_size) {
         pos.x = box_max.x - particle_size;
         vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, vec3(-1, 0, 0)) * vec3(-1, 0, 0)* DAMP;
-//         vel.x = - vel.x * DAMP;
     }
 
     if (pos.y < box_min.y + particle_size) {
@@ -124,19 +95,28 @@ void main() {
     if (pos.z < box_min.z + particle_size) {
         pos.z = box_min.z + particle_size;
         vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, vec3(0, 0, 1)) * vec3(0, 0, 1) * DAMP;
-//        vel.z = - vel.z * DAMP;
     }
     if (pos.z > box_max.z - particle_size) {
         pos.z = box_max.z - particle_size;
         vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, vec3(0, 0, -1)) * vec3(0, 0, -1) * DAMP;
-//        vel.z = - vel.z * DAMP;
     }
+    
+	// Collision with the circle, then bounce back
+    vec3 circle_center_to_particle = pos.xyz - circle_center;
+    float dist_sq = dot(circle_center_to_particle, circle_center_to_particle);
+    
+	if (dist_sq < circle_radius * circle_radius) {
+		// if the particle is inside the circle, then move the particle to the surface of the circle
+		vec3 normalized_dir = normalize(circle_center_to_particle);
+		pos.xyz = circle_center + normalized_dir * circle_radius;
+		// reflect the velocity vector
+		vel.xyz -= 2.0f * dot(vel.xyz, normalized_dir) * normalized_dir * 1.03f;
+	}
 
     vel.xyz += acc.xyz * deltaTime;
     
     // Triangle Check from collision_meshes
-    for (uint collision_index = 0; collision_index< collision_meshes.length(); collision_index += 3) {
-
+    for (uint collision_index = 0; collision_index < collision_meshes.length(); collision_index += 3) {
         // Get the vertices of the triangle
 		vec3 v0 = collision_meshes[collision_index + 0].xyz;
 		vec3 v1 = collision_meshes[collision_index + 1].xyz;
@@ -145,17 +125,16 @@ void main() {
         // If the position is in the triangle, then bounce back by the plane
 		if(CollidePositionTriangle(pos.xyz, vel.xyz, v0, v1, v2))
         {
-            // Calculate reflect vector. v = v - 2 * dot(v, n) * n. but the triangle is clockwise or not.
+            // Calculate reflect vector. v = v - 2 * dot(v, n) * n
+            vec3 triangle_normal = normalize(cross(v1 - v0, v2 - v0));
             pos = pos - vel * deltaTime;
-            vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, normalize(cross(v1 - v0, v2 - v0))) * normalize(cross(v1 - v0, v2 - v0)) * DAMP;
+            vel.xyz = vel.xyz - 2.0f * dot(vel.xyz, triangle_normal) * triangle_normal * DAMP;
+            break; // Early exit after first collision
 		}
 	}
 
-
     pos.xyz += vel.xyz * deltaTime;
-
 
     velocities[id].xyz = vel;
     positions[id].xyz = pos;
-    
 }
