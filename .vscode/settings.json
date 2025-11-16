@@ -9,5 +9,21 @@
             "icon": "tools"
         }
     },
-    "terminal.integrated.defaultProfile.windows": "Developer Command Prompt"
+    "terminal.integrated.defaultProfile.windows": "Developer Command Prompt",
+    "files.exclude": {
+        "rs_engine_library/**": true,
+        "rsengine/doxy_scripts/**": true,
+        "rsengine/doxygen-awesome-css/**": true,
+        "rsengine/x64/**": true,
+        "rsengine/BuildFiles/**": true,
+        "rsengine_playground/OutputFiles/**": true,
+        "rsengine_playground/x64/**": true,
+        "rsengine_playground/.vs/**": true,
+        "rsengine_playground/SeobJJangGames/**": true,
+        "rsengine_playground/resources/Font/**": true,
+        "rsengine_playground/resources/GIZMO/**": true,
+        "rsengine_playground/resources/InitLoadFiles/**": true,
+        "rsengine_playground/resources/TestObject/**": true,
+        "rsengine_playground/resources/Textures/**": true
+    }
 }
