@@ -68,6 +68,15 @@ namespace RS_Particle
 
 		SetDividedValue(0);
 		
+		// Transfer collision mesh data once during initialization for static solvers
+		// This avoids redundant per-frame transfers
+		if (m_solver_type == RSSolverType::R_STATIC_BRUTE_FORCE || 
+		    m_solver_type == RSSolverType::R_STATIC_GRID ||
+		    m_solver_type == RSSolverType::R_STATIC_KDTREE ||
+		    m_solver_type == RSSolverType::R_STATIC_OCTREE)
+		{
+			TransferMeshCollisionData();
+		}
 	}
 
 	void RSParticleSimulator::Shutdown()
@@ -77,8 +86,9 @@ namespace RS_Particle
 		SyncDataFromObjects();
 		RemoveToolObjects();
 
-	  m_target_legend_texture = 0;
-
+		m_target_legend_texture = 0;
+		m_cached_player_object = nullptr;
+		b_collision_mesh_transferred = false;
 	}
 
 	void RSParticleSimulator::Update(const float dt)

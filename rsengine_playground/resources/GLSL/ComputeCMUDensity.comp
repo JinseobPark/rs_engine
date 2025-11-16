@@ -1,6 +1,16 @@
 
 #version 460
 
+/*
+ * CMU Density Computation (Brute Force O(N²))
+ * 
+ * Design Philosophy:
+ * - Maintains simplicity and accuracy over spatial optimization
+ * - For spatial acceleration, use ComputeGridSPH.comp instead
+ * - Optimized for: small-to-medium particle counts (<50k)
+ * - Focuses on: memory coalescing, early exits, constant pre-calculation
+ */
+
 layout (local_size_x = 256) in;
 
 #define PI_FLOAT 3.1415927410125732421875f
@@ -40,17 +50,21 @@ void main() {
     
     float density_sum = 0.0f;
 
-    // Loop over all particles
+    // Brute-force O(N²) loop: Check all particle pairs
+    // Note: For large N, consider using Static Grid solver with spatial hashing
     for (uint j = 0; j < num_particles; ++j) {
-        vec3 delta = pos_i - positions[j].xyz;
-        float r_sq = dot(delta, delta); // r^2 (avoid sqrt)
+        // Load neighbor position once (memory coalescing optimization)
+        vec3 pos_j = positions[j].xyz;
+        vec3 delta = pos_i - pos_j;
+        float r_sq = dot(delta, delta); // r^2 (avoid sqrt for performance)
         
-        if (r_sq < h_sq) {
-            // Poly6 kernel: (h^2 - r^2)^3
-            float h_sq_minus_r_sq = h_sq - r_sq;
-            float kernel_value = h_sq_minus_r_sq * h_sq_minus_r_sq * h_sq_minus_r_sq;
-            density_sum += kernel_coefficient * kernel_value;
-        }
+        // Early exit: Skip particles outside influence radius (most common case)
+        if (r_sq >= h_sq) continue;
+        
+        // Poly6 kernel: (h^2 - r^2)^3
+        float h_sq_minus_r_sq = h_sq - r_sq;
+        float kernel_value = h_sq_minus_r_sq * h_sq_minus_r_sq * h_sq_minus_r_sq;
+        density_sum += kernel_coefficient * kernel_value;
     }
 
     // Clamp density and compute pressure

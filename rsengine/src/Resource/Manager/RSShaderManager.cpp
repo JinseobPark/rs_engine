@@ -129,11 +129,14 @@ namespace RS_Shader
 		const auto sph_grid_acc_compute_shader = new ComputeShader("resources\\GLSL\\ComputeGridAcc.comp");
 		comp_shaders_map_[RSComputeShaderNames::SPH_GRID_ACC] = sph_grid_acc_compute_shader;
 
-		const auto sph_cmu_density_compute_shader = new ComputeShader(ComputeCMUDensity_cs, false);
+		// const auto sph_cmu_density_compute_shader = new ComputeShader(ComputeCMUDensity_cs, false);
+		const auto sph_cmu_density_compute_shader = new ComputeShader("resources\\GLSL\\ComputeCMUDensity.comp");
 		comp_shaders_map_[RSComputeShaderNames::SPH_CMU_DENSITY] = sph_cmu_density_compute_shader;
-		const auto sph_cmu_force_compute_shader = new ComputeShader(ComputeCMUForce_cs, false);
+		// const auto sph_cmu_force_compute_shader = new ComputeShader(ComputeCMUForce_cs, false);
+		const auto sph_cmu_force_compute_shader = new ComputeShader("resources\\GLSL\\ComputeCMUForce.comp");
 		comp_shaders_map_[RSComputeShaderNames::SPH_CMU_FORCE] = sph_cmu_force_compute_shader;
-		const auto sph_cmu_post_compute_shader = new ComputeShader(ComputeCMUPost_cs, false);
+		// const auto sph_cmu_post_compute_shader = new ComputeShader(ComputeCMUPost_cs, false);
+		const auto sph_cmu_post_compute_shader = new ComputeShader("resources\\GLSL\\ComputeCMUPost.comp");
 		comp_shaders_map_[RSComputeShaderNames::SPH_CMU_POST] = sph_cmu_post_compute_shader;
 
     const auto sph_dynamic_bt_state_compute_shader = new ComputeShader(DynamicInOutFlowBatch_cs, false);

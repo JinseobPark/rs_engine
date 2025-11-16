@@ -12,7 +12,24 @@ namespace RS_Particle
 
 	void RSParticleSimulator::ComputeStaticBruteForce(const float dt)
 	{
-		TransferMeshCollisionData();
+		/*
+		 * CMU Brute Force Solver - O(N²) Complexity
+		 * 
+		 * Recommended Usage:
+		 * - Small to medium particle counts (<50,000)
+		 * - Scenarios requiring maximum accuracy
+		 * - Educational/debugging purposes
+		 * 
+		 * For large particle systems (>50k), use ComputeStaticGrid() instead,
+		 * which provides O(N) complexity through spatial hashing.
+		 */
+		
+		// Collision mesh transfer moved to initialization for static solver
+		// Only transfer if collision data changed (dynamic collision objects added)
+		if (b_any_collision_data_changed)
+		{
+			TransferMeshCollisionData();
+		}
 
 		ComputeStaticBruteForce_Density();
 		ComputeStaticBruteForce_Force(dt);
@@ -25,24 +42,21 @@ namespace RS_Particle
 
 	void RSParticleSimulator::ComputeStaticBruteForce_Density() const
 	{
-		RSResourceManager::GetInstance()->GetShaderManager()->Use(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY);
+		auto shader_manager = RSResourceManager::GetInstance()->GetShaderManager();
+		shader_manager->Use(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY);
+		
 		if (b_any_calculate_property_changed)
 		{
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY,
-                                                "particle_radius", m_particle_property.particle_radius);
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY,
-                                                "smoothing_length", m_particle_property.smoothing_length);
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY, "particle_mass",
-                                                m_particle_property.mass);
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY, "u_density_0",
-                                                m_particle_property.density);
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY,
-                                                "u_gas_constant", m_particle_property.gas_constant);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY,
+			                        "particle_radius", m_particle_property.particle_radius);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY,
+			                        "smoothing_length", m_particle_property.smoothing_length);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY,
+			                        "particle_mass", m_particle_property.mass);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY,
+			                        "u_density_0", m_particle_property.density);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_DENSITY,
+			                        "u_gas_constant", m_particle_property.gas_constant);
 		}
 		glDispatchCompute((m_particle_count + 255) / 256, 1, 1);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -51,29 +65,24 @@ namespace RS_Particle
 
 	void RSParticleSimulator::ComputeStaticBruteForce_Force(const float dt)
 	{
-		RSResourceManager::GetInstance()->GetShaderManager()->Use(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE);
-		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE,
-                                                                  "delta_time", dt);
+		auto shader_manager = RSResourceManager::GetInstance()->GetShaderManager();
+		shader_manager->Use(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE, "delta_time", dt);
+		
 		if (b_any_calculate_property_changed)
 		{
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE,
-                                                "u_particle_radius", m_particle_property.particle_radius);
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE,
-                                                "smoothing_length", m_particle_property.smoothing_length);
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE, "u_particle_mass",
-                                                m_particle_property.mass);
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE, "u_viscosity",
-                                                m_particle_property.viscosity);
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE, "u_density_0",
-                                                m_particle_property.density);
-			RSResourceManager::GetInstance()->GetShaderManager()->
-                                        SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE, "u_gravity",
-                                                m_particle_property.gravity);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE,
+			                        "u_particle_radius", m_particle_property.particle_radius);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE,
+			                        "smoothing_length", m_particle_property.smoothing_length);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE,
+			                        "u_particle_mass", m_particle_property.mass);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE,
+			                        "u_viscosity", m_particle_property.viscosity);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE,
+			                        "u_density_0", m_particle_property.density);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_FORCE,
+			                        "u_gravity", m_particle_property.gravity);
 			b_any_calculate_property_changed = false;
 			SetTextShouldUpdate(true);
 		}
@@ -85,30 +94,34 @@ namespace RS_Particle
 
 	void RSParticleSimulator::ComputeStaticBruteForce_Post(const float dt)
 	{
-		RS_Object::RSObject* player = RSResourceManager::GetInstance()->GetObjectManager()->GetObject("Player");
-
-		RSResourceManager::GetInstance()->GetShaderManager()->Use(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST);
-		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST,
-                                                                  "deltaTime", dt);
-
-		if (player != nullptr)
+		// Cache shader manager to reduce repeated GetInstance calls
+		auto shader_manager = RSResourceManager::GetInstance()->GetShaderManager();
+		
+		// Use cached player object if available, otherwise query once per frame
+		if (m_cached_player_object == nullptr)
 		{
-			const glm::vec3 player_position = player->GetTransform()->GetPosition();
-			RSResourceManager::GetInstance()->GetShaderManager()->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST,
-                                                                    "circle_center", player_position);
+			m_cached_player_object = RSResourceManager::GetInstance()->GetObjectManager()->GetObject("Player");
+		}
+
+		shader_manager->Use(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST, "deltaTime", dt);
+
+		if (m_cached_player_object != nullptr)
+		{
+			const glm::vec3 player_position = m_cached_player_object->GetTransform()->GetPosition();
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST, "circle_center", player_position);
 		}
 
 		if (b_init_boundary_condition_changed)
 		{
-			RSResourceManager::GetInstance()->GetShaderManager()->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST,
-                                                                    "u_particle_radius",
-                                                                    m_particle_property.particle_radius);
-			RSResourceManager::GetInstance()->GetShaderManager()->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST,
-                                                                    "circle_radius", 2.0f);
-			RSResourceManager::GetInstance()->GetShaderManager()->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST,
-                                                                    "box_min", m_init_setting.boundary_min);
-			RSResourceManager::GetInstance()->GetShaderManager()->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST,
-                                                                    "box_max", m_init_setting.boundary_max);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST,
+			                        "u_particle_radius", m_particle_property.particle_radius);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST,
+			                        "circle_radius", 2.0f);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST,
+			                        "box_min", m_init_setting.boundary_min);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::SPH_CMU_POST,
+			                        "box_max", m_init_setting.boundary_max);
 
 			b_init_boundary_condition_changed = false;
 		}

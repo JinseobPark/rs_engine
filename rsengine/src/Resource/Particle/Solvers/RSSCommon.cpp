@@ -144,23 +144,28 @@ namespace RS_Particle
 		glGenBuffers(1, &m_velocity_ssbo);
 		glGenBuffers(1, &m_acceleration_ssbo);
 
-		// Create SSBOs for the particle data. It work with triple buffering
+		// Determine buffer usage pattern based on solver type
+		// Static solvers: Data doesn't change after initialization -> GL_STATIC_DRAW
+		// Dynamic solvers: Data changes every frame -> GL_DYNAMIC_DRAW
+		GLenum buffer_usage = GL_DYNAMIC_DRAW;
+		if (m_solver_type == RSSolverType::R_STATIC_BRUTE_FORCE ||
+		    m_solver_type == RSSolverType::R_STATIC_GRID ||
+		    m_solver_type == RSSolverType::R_STATIC_KDTREE ||
+		    m_solver_type == RSSolverType::R_STATIC_OCTREE)
+		{
+			// Static solvers update data on GPU via compute shaders, not CPU uploads
+			buffer_usage = GL_STATIC_DRAW;
+		}
+
+		// Create SSBOs with optimized usage hints
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_position_ssbo);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, m_particle_count * sizeof(glm::vec4), nullptr, GL_DYNAMIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, m_particle_count * sizeof(glm::vec4), m_positions.data(), buffer_usage);
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_velocity_ssbo);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, m_particle_count * sizeof(glm::vec4), nullptr, GL_DYNAMIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, m_particle_count * sizeof(glm::vec4), m_velocities.data(), buffer_usage);
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_acceleration_ssbo);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, m_particle_count * sizeof(glm::vec4), nullptr, GL_DYNAMIC_DRAW);
-
-		// First, fill the buffer with the data
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_position_ssbo);
-		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, m_particle_count * sizeof(glm::vec4), m_positions.data());
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_velocity_ssbo);
-		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, m_particle_count * sizeof(glm::vec4), m_velocities.data());
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_acceleration_ssbo);
-		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, m_particle_count * sizeof(glm::vec4), m_accelerations.data());
+		glBufferData(GL_SHADER_STORAGE_BUFFER, m_particle_count * sizeof(glm::vec4), m_accelerations.data(), buffer_usage);
 
 		// Bind the current and result buffers
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_position_ssbo);
@@ -206,11 +211,13 @@ namespace RS_Particle
 			glGenBuffers(1, &m_mesh_collision_ssbo);
 
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_mesh_collision_ssbo);
-      glBufferData(GL_SHADER_STORAGE_BUFFER, m_mesh_vertices.size() * sizeof(glm::vec4), m_mesh_vertices.data(),
-                   GL_DYNAMIC_DRAW);
+			// Collision mesh is static, use GL_STATIC_DRAW for better GPU optimization
+			glBufferData(GL_SHADER_STORAGE_BUFFER, m_mesh_vertices.size() * sizeof(glm::vec4), m_mesh_vertices.data(),
+			             GL_STATIC_DRAW);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, m_mesh_collision_ssbo);
 
 			b_any_collision_data_changed = false;
+			b_collision_mesh_transferred = true;
 		}
 	}
 

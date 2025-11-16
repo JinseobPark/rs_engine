@@ -118,21 +118,41 @@ struct RSParticle
 
 /**
  * @brief Solver Type
+ * 
+ * Performance Characteristics & Usage Guidelines:
+ * 
+ * BRUTE FORCE (CMU) - O(N²) Complexity:
+ * - R_STATIC_BRUTE_FORCE: Best for <50k particles, maximum accuracy
+ * - R_DYNAMIC_BRUTE_FORCE: Dynamic particle creation/destruction
+ * - Advantages: Simple, accurate, easy to debug
+ * - Disadvantages: Poor scaling with large N
+ * 
+ * GRID (Spatial Hash) - O(N) Complexity:
+ * - R_STATIC_GRID: Recommended for >50k particles
+ * - R_DYNAMIC_GRID: Large-scale dynamic simulations
+ * - Advantages: Excellent scaling, constant-time neighbor search
+ * - Disadvantages: Memory overhead, grid cell management
+ * 
+ * TREE (KD-Tree/Octree) - O(N log N) Complexity:
+ * - R_STATIC_KDTREE, R_STATIC_OCTREE: Non-uniform distributions
+ * - R_DYNAMIC_KDTREE, R_DYNAMIC_OCTREE: Adaptive spatial subdivision
+ * - Advantages: Better than grid for clustered particles
+ * - Disadvantages: Tree construction overhead
  */
 enum class RSSolverType : int
 {
 	R_NONE = 0,
-	R_STATIC_BRUTE_FORCE = 1,
-	R_STATIC_GRID = 2,
-	R_DYNAMIC_BRUTE_FORCE = 3,
+	R_STATIC_BRUTE_FORCE = 1,  ///< O(N²) - Best for <50k particles, maximum accuracy
+	R_STATIC_GRID = 2,          ///< O(N) - Recommended for >50k particles with uniform distribution
+	R_DYNAMIC_BRUTE_FORCE = 3,  ///< O(N²) - Dynamic particle management with brute force
 
-	R_STATIC_KDTREE = 4,
-	R_STATIC_OCTREE = 5,
-	R_DYNAMIC_GRID = 6,
-	R_DYNAMIC_KDTREE = 7,
-	R_DYNAMIC_OCTREE = 8,
+	R_STATIC_KDTREE = 4,        ///< O(N log N) - Future: Non-uniform particle distributions
+	R_STATIC_OCTREE = 5,        ///< O(N log N) - Future: Adaptive spatial subdivision
+	R_DYNAMIC_GRID = 6,         ///< O(N) - Future: Large-scale dynamic with grid
+	R_DYNAMIC_KDTREE = 7,       ///< O(N log N) - Future: Dynamic with tree structure
+	R_DYNAMIC_OCTREE = 8,       ///< O(N log N) - Future: Dynamic octree
 
-  R_TRIPLE_BUFFERING_TEST = 9
+  R_TRIPLE_BUFFERING_TEST = 9 ///< Test: Triple buffering optimization experiment
 };
 
 /**
@@ -1069,6 +1089,10 @@ namespace RS_Particle
     RSRenderPropertyType m_render_property_type = RSRenderPropertyType::R_COLOR; ///< Render property type
 
     GLuint m_target_legend_texture = 0; ///< Target legend texture
+
+    // Cached references for optimization
+    RS_Object::RSObject* m_cached_player_object = nullptr; ///< Cached player object pointer to avoid repeated lookups
+    bool b_collision_mesh_transferred = false; ///< Flag to track if collision mesh has been transferred to GPU
 
 	private:
     friend class RS_Handler::RSImguiHandler; ///< Friend class RSImguiHandler

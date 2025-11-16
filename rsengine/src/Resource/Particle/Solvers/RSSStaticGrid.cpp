@@ -12,7 +12,12 @@ namespace RS_Particle
 
 		InitializeStaticGrid();
 
-		TransferMeshCollisionData();
+		// Collision mesh transfer moved to initialization for static solver
+		// Only transfer if collision data changed (dynamic collision objects added)
+		if (b_any_collision_data_changed)
+		{
+			TransferMeshCollisionData();
+		}
 
 		ComputeStaticGrid_Batch();
 
