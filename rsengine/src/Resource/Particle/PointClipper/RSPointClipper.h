@@ -66,7 +66,13 @@ namespace RS_PointClipper
      * @brief Read Point Data
      * @param file file to read
      */
-    void ReadPointData(std::ifstream& file);
+    void ReadBinPointData(std::ifstream& file);
+
+    /**
+     * @brief Read PLY Point Data
+     * @param file file to read
+     */
+    void ReadPlyPointData(std::ifstream& file);
 
 
     /**
@@ -141,6 +147,11 @@ namespace RS_PointClipper
      * @brief Reset point clipper data
      */
     void ResetData();
+
+    /**
+     * @brief Set camera position to fit the point cloud
+     */
+    void SetCameraPosition();
 
   private:
     int m_point_count = 0; ///< Point count
