@@ -81,9 +81,9 @@ namespace RS_FILE_IO
 
 	bool RSFileIOManger::OpenFileDialog()
 	{
-		const wchar_t* filter_patterns[] = { L"*.png", L"*.jpg", L"*.stl", L"*.obj", L"*.mesh_obj", L"*.bin", L"*.vtk"};
+		const wchar_t* filter_patterns[] = { L"*.png", L"*.jpg", L"*.stl", L"*.obj", L"*.mesh_obj", L"*.bin", L"*.vtk", L"*.ply" };
 
-		const wchar_t* file_path = tinyfd_openFileDialogW(L"Open File", L"", 7, filter_patterns, nullptr, 0);
+		const wchar_t* file_path = tinyfd_openFileDialogW(L"Open File", L"", 8, filter_patterns, nullptr, 0);
 		if (!file_path)
 		{
 #if 0
@@ -222,7 +222,7 @@ namespace RS_FILE_IO
 		{
 			result = RSResourceManager::GetInstance()->GetMeshManager()->LoadMeshStl2(file_name, file_path_asc);
 		}
-		else if (file_extension == "bin")
+		else if (file_extension == "bin" || file_extension == "ply")
 		{
 
 			if (!RSResourceManager::GetInstance()->GetParticleManager()->IsExistPointClipper())
@@ -296,7 +296,7 @@ namespace RS_FILE_IO
 		{
 			result = RSResourceManager::GetInstance()->GetMeshManager()->LoadMeshStl2(file_name, file_path_asc);
 		}
-		else if (file_extension == "bin")
+		else if (file_extension == "bin" || file_extension == "ply")
 		{
 
 			if (!RSResourceManager::GetInstance()->GetParticleManager()->IsExistPointClipper())
@@ -317,13 +317,13 @@ namespace RS_FILE_IO
 		{
 			if (!RSResourceManager::GetInstance()->GetParticleManager()->IsExistVtkViewer())
 			{
-        RS_WARN("VTK Viewer didn't load.");
-        result = false;
-      }
-      else
-      {
-        RSResourceManager::GetInstance()->GetParticleManager()->GetVtkViewer()->LoadVtkFile(file_path_asc);
-        result = true;
+				RS_WARN("VTK Viewer didn't load.");
+				result = false;
+			}
+			else
+			{
+				RSResourceManager::GetInstance()->GetParticleManager()->GetVtkViewer()->LoadVtkFile(file_path_asc);
+				result = true;
 			}
 		}
 		else
@@ -366,7 +366,7 @@ namespace RS_FILE_IO
 		{
 			result = RSResourceManager::GetInstance()->GetMeshManager()->LoadMeshStl2(file_name, file_path_asc);
 		}
-		else if (file_extension == "bin")
+		else if (file_extension == "bin" || file_extension == "ply")
 		{
 
 			if (!RSResourceManager::GetInstance()->GetParticleManager()->IsExistPointClipper())
@@ -392,9 +392,6 @@ namespace RS_FILE_IO
 			}
 			else
 			{
-				//if (RSResourceManager::GetInstance()->GetParticleManager()->GetVTKViewer()->IsLoaded())
-				//	RSResourceManager::GetInstance()->GetParticleManager()->GetVTKViewer()->ResetData();
-
 				RSResourceManager::GetInstance()->GetParticleManager()->GetVtkViewer()->LoadVtkFile(file_path_asc);
 				result = true;
 			}
@@ -438,7 +435,7 @@ namespace RS_FILE_IO
 		{
 			result = RSResourceManager::GetInstance()->GetMeshManager()->LoadMeshStl2(file_name, file_path_asc);
 		}
-		else if (file_extension == "bin")
+		else if (file_extension == "bin" || file_extension == "ply")
 		{
 
 			if (!RSResourceManager::GetInstance()->GetParticleManager()->IsExistPointClipper())

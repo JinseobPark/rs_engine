@@ -76,16 +76,33 @@ namespace RS_PointClipper
     m_point_cloud_file_path = file_path;
     m_point_cloud_file_name = file_path.substr(file_path.find_last_of("/\\") + 1);
 
-    // Read the point cloud data from the file by binary read.
-    std::ifstream file(file_path, std::ios::in | std::ios::binary);
-    if (!file.is_open()) {
-      throw std::runtime_error("Failed to open the point cloud file.");
+    // format of the point cloud file:
+    const std::string file_extension = file_path.substr(file_path.find_last_of(".") + 1);
+
+    // the format will be 'bin' for binary read and 'ply' for ascii read
+    if (file_extension == "bin") {
+      // Read the point cloud data from the file by binary read.
+      std::ifstream file(file_path, std::ios::in | std::ios::binary);
+      if (!file.is_open()) {
+        throw std::runtime_error("Failed to open the point cloud file.");
+      }
+
+      ReadBinPointData(file);
+      CreateBufferObject();
+      CalculateMinMax();
+    }
+    else if (file_extension == "ply") {
+        // Read the point cloud data from the file by ascii read.
+        std::ifstream file(file_path);
+        if (!file.is_open()) {
+            throw std::runtime_error("Failed to open the point cloud file.");
+        }
+        
+      ReadPlyPointData(file);
+      CreateBufferObject();
+      CalculateMinMax();
     }
 
-    ReadPointData(file);
-
-    CreateBufferObject();
-    CalculateMinMax();
     CreateBox();
 
     b_is_loaded = true;
@@ -95,7 +112,7 @@ namespace RS_PointClipper
 
   }
 
-  void RSPointClipper::ReadPointData(std::ifstream& file)
+  void RSPointClipper::ReadBinPointData(std::ifstream& file)
   {
     /*
     Int32 (Point count)
@@ -116,6 +133,57 @@ namespace RS_PointClipper
     m_data.resize(size_of_data);
 
     file.read(reinterpret_cast<char*>(m_data.data()), size_of_data * sizeof(float));
+
+    // End read
+    file.close();
+  }
+
+  void RSPointClipper::ReadPlyPointData(std::ifstream& file)
+  {
+    // Currently, the ply format is ascii format.
+    /*
+    ply
+    format ascii 1.0
+    comment author: <String>
+    element vertex <N>
+    property float x
+    property float y
+    property float z
+    property uchar red
+    property uchar green
+    property uchar blue
+    end_header
+    0.0 0.0 0.0 255 0 0
+    1.0 0.0 0.0 0 255 0
+    ...
+    */
+
+    std::string line;
+    // Read header
+    while (std::getline(file, line)) {
+      if (line.substr(0, 14) == "element vertex") {
+        m_point_count = std::stoi(line.substr(15));
+      }
+      if (line == "end_header") {
+        break;
+      }
+    }
+    const int size_of_data = m_point_count * 6; // count * 6(point, color)
+    m_data.resize(size_of_data);
+    int index = 0;
+    // Read point data
+    while (std::getline(file, line) && index < size_of_data) {
+      std::istringstream iss(line);
+      float x, y, z;
+      int r, g, b;
+      iss >> x >> y >> z >> r >> g >> b;
+      m_data[index++] = x;
+      m_data[index++] = y;
+      m_data[index++] = z;
+      m_data[index++] = static_cast<float>(r) / 255.0f;
+      m_data[index++] = static_cast<float>(g) / 255.0f;
+      m_data[index++] = static_cast<float>(b) / 255.0f;
+    }
 
     // End read
     file.close();

@@ -66,7 +66,13 @@ namespace RS_PointClipper
      * @brief Read Point Data
      * @param file file to read
      */
-    void ReadPointData(std::ifstream& file);
+    void ReadBinPointData(std::ifstream& file);
+
+    /**
+     * @brief Read PLY Point Data
+     * @param file file to read
+     */
+    void ReadPlyPointData(std::ifstream& file);
 
 
     /**
