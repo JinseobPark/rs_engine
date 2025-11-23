@@ -148,6 +148,11 @@ namespace RS_PointClipper
      */
     void ResetData();
 
+    /**
+     * @brief Set camera position to fit the point cloud
+     */
+    void SetCameraPosition();
+
   private:
     int m_point_count = 0; ///< Point count
 

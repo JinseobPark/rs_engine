@@ -104,6 +104,7 @@ namespace RS_PointClipper
     }
 
     CreateBox();
+    SetCameraPosition();
 
     b_is_loaded = true;
     RS_PRINT("Point cloud data loaded successfully Debug.");
@@ -170,23 +171,99 @@ namespace RS_PointClipper
     }
     const int size_of_data = m_point_count * 6; // count * 6(point, color)
     m_data.resize(size_of_data);
-    int index = 0;
-    // Read point data
-    while (std::getline(file, line) && index < size_of_data) {
-      std::istringstream iss(line);
-      float x, y, z;
-      int r, g, b;
-      iss >> x >> y >> z >> r >> g >> b;
-      m_data[index++] = x;
-      m_data[index++] = y;
-      m_data[index++] = z;
-      m_data[index++] = static_cast<float>(r) / 255.0f;
-      m_data[index++] = static_cast<float>(g) / 255.0f;
-      m_data[index++] = static_cast<float>(b) / 255.0f;
-    }
 
-    // End read
-    file.close();
+
+  // 전체 파일을 메모리로 읽기
+  std::string buffer;
+  std::string temp_line;
+  while (std::getline(file, temp_line)) {
+    buffer += temp_line + "\n";  // 줄바꿈 명시적으로 추가
+  }
+  file.close();
+  
+  // strtof를 사용한 수동 파싱
+  const char* ptr = buffer.c_str();
+  char* end_ptr = nullptr;
+  const char* buffer_end = ptr + buffer.size();
+   int index = 0;
+  int parsed_count = 0;
+  
+  while (ptr < buffer_end && parsed_count < m_point_count) {
+    // 공백과 줄바꿈 건너뛰기
+    while (ptr < buffer_end && (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || *ptr == '\n')) {
+      ptr++;
+    }
+    
+    if (ptr >= buffer_end) break;
+    
+    // x, y, z 파싱
+    float x = strtof(ptr, &end_ptr);
+    if (ptr == end_ptr) {
+      // 파싱 실패 - 다음 줄로 이동
+      while (ptr < buffer_end && *ptr != '\n') ptr++;
+      if (ptr < buffer_end) ptr++;
+      continue;
+    }
+    ptr = end_ptr;
+    
+    float y = strtof(ptr, &end_ptr);
+    if (ptr == end_ptr) {
+      while (ptr < buffer_end && *ptr != '\n') ptr++;
+      if (ptr < buffer_end) ptr++;
+      continue;
+    }
+    ptr = end_ptr;
+    
+    float z = strtof(ptr, &end_ptr);
+    if (ptr == end_ptr) {
+      while (ptr < buffer_end && *ptr != '\n') ptr++;
+      if (ptr < buffer_end) ptr++;
+      continue;
+    }
+    ptr = end_ptr;
+    
+    long r = strtol(ptr, &end_ptr, 10);
+    if (ptr == end_ptr) {
+      while (ptr < buffer_end && *ptr != '\n') ptr++;
+      if (ptr < buffer_end) ptr++;
+      continue;
+    }
+    ptr = end_ptr;
+    
+    long g = strtol(ptr, &end_ptr, 10);
+    if (ptr == end_ptr) {
+      while (ptr < buffer_end && *ptr != '\n') ptr++;
+      if (ptr < buffer_end) ptr++;
+      continue;
+    }
+    ptr = end_ptr;
+    
+    long b = strtol(ptr, &end_ptr, 10);
+    if (ptr == end_ptr) {
+      while (ptr < buffer_end && *ptr != '\n') ptr++;
+      if (ptr < buffer_end) ptr++;
+      continue;
+    }
+    ptr = end_ptr;
+    
+    if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
+      while (ptr < buffer_end && *ptr != '\n') ptr++;
+      if (ptr < buffer_end) ptr++;
+      continue;
+    }
+    
+    m_data[index++] = x;
+    m_data[index++] = y;
+    m_data[index++] = z;
+    m_data[index++] = static_cast<float>(r) / 255.0f;
+    m_data[index++] = static_cast<float>(g) / 255.0f;
+    m_data[index++] = static_cast<float>(b) / 255.0f;
+    
+    parsed_count++;
+  }
+
+  m_point_count = parsed_count;
+
   }
 
   void RSPointClipper::CreateBufferObject()
@@ -236,13 +313,13 @@ namespace RS_PointClipper
     }
 
     // Pre-calculate loop bounds to avoid redundant computation in each iteration
-    const int data_count = m_point_count * 6;
+    const int data_count = m_data.size();
 
     // Use pointers to avoid accessing the vector using indices repeatedly
     const float* data_ptr = m_data.data();
 
-    glm::vec3 local_min = m_data_min;
-    glm::vec3 local_max = m_data_max;
+    glm::vec3 local_min(data_ptr[0], data_ptr[1], data_ptr[2]);
+    glm::vec3 local_max(data_ptr[0], data_ptr[1], data_ptr[2]);
 
     for (int index = 0; index < data_count; index += 6) {
       glm::vec3 position(data_ptr[index], data_ptr[index + 1], data_ptr[index + 2]);
@@ -348,10 +425,32 @@ namespace RS_PointClipper
 
     clipping_box->GetTransform()->SetPosition(box_position);
     clipping_box->GetTransform()->SetScale(box_scale);
-
-
-
   }
+
+  void RSPointClipper::SetCameraPosition()
+  {
+    const auto m_resource_manager = RSResourceManager::GetInstance();
+    const auto camera = m_resource_manager->GetCamera();
+
+    // Get clipping box center and size
+    const auto clipping_box = m_resource_manager->GetObjectManager()->GetObjectW("clipping_box");
+
+
+    const glm::vec3 center_position = clipping_box->GetTransform()->GetPosition();
+    const glm::vec3 extents = clipping_box->GetTransform()->GetScale() * 0.5f;
+    const float extent_length = glm::length(extents);
+    
+    // Position the camera
+    glm::vec3 camera_position = center_position + glm::vec3(0.0f, 0.0f, extent_length * 2.0f);
+    camera->SetPosition(camera_position);
+
+    // Make the camera look at the center of the point cloud
+    camera->SetFocalPoint(center_position);
+
+	// Update camera's matrix
+	camera->UpdateCameraVectors();
+  }
+
   void RSPointClipper::SetClippingColor(const glm::vec3 color_data)
   {
     m_clip_color = color_data;
