@@ -25,5 +25,6 @@
         "rsengine_playground/resources/InitLoadFiles/**": true,
         "rsengine_playground/resources/TestObject/**": true,
         "rsengine_playground/resources/Textures/**": true
-    }
+    },
+    "cmake.sourceDirectory": "C:/Users/WhatSseob/Desktop/rs_engine/rsengine/extern/imgui"
 }
