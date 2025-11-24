@@ -74,6 +74,12 @@ namespace RS_PointClipper
      */
     void ReadPlyPointData(std::ifstream& file);
 
+    /**
+     * @brief Read LAS Point Data
+     * @param file file to read
+     */
+    void ReadLasPointData(std::ifstream& file);
+
 
     /**
      * @brief Create Buffer Object

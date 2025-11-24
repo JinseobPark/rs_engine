@@ -73,6 +73,9 @@ namespace RS_PointClipper
   {
     RS_Timer::RSDebugTimer::GetInstance()->Start();
 
+    // Clear previous data
+    ClearData();
+
     m_point_cloud_file_path = file_path;
     m_point_cloud_file_name = file_path.substr(file_path.find_last_of("/\\") + 1);
 
@@ -102,6 +105,21 @@ namespace RS_PointClipper
       CreateBufferObject();
       CalculateMinMax();
     }
+    else if (file_extension == "las") {
+      // Read the point cloud data from the file by LAS format read.
+      std::ifstream file(file_path, std::ios::in | std::ios::binary);
+      if (!file.is_open()) {
+          throw std::runtime_error("Failed to open the point cloud file.");
+      }
+
+      ReadLasPointData(file);
+      CreateBufferObject();
+      CalculateMinMax();
+    }
+    else {
+      throw std::runtime_error("Unsupported point cloud file format.");
+    }
+
 
     CreateBox();
     SetCameraPosition();
@@ -264,6 +282,253 @@ namespace RS_PointClipper
 
   m_point_count = parsed_count;
 
+  }
+
+  void RSPointClipper::ReadLasPointData(std::ifstream& file)
+  {
+    #pragma pack(push, 1)
+    // LAS 1.2 format header structure
+    struct LASHeader {
+      char file_signature[4];
+      uint16_t file_source_id;
+      uint16_t global_encoding;
+      uint32_t project_id_guid_data_1;
+      uint16_t project_id_guid_data_2;
+      uint16_t project_id_guid_data_3;
+      uint8_t project_id_guid_data_4[8];
+      uint8_t version_major;
+      uint8_t version_minor;
+      char system_identifier[32];
+      char generating_software[32];
+      uint16_t file_creation_day;
+      uint16_t file_creation_year;
+      uint16_t header_size;
+      uint32_t offset_to_point_data;
+      uint32_t number_of_variable_length_records;
+      uint8_t point_data_format;
+      uint16_t point_data_record_length;
+      uint32_t number_of_point_records;
+      uint32_t number_of_points_by_return[5];
+      double x_scale_factor;
+      double y_scale_factor;
+      double z_scale_factor;
+      double x_offset;
+      double y_offset;
+      double z_offset;
+      double max_x;
+      double min_x;
+      double max_y;
+      double min_y;
+      double max_z;
+      double min_z;
+    };
+
+    struct VLR_Header {
+      uint16_t reserved;
+      char user_id[16];
+      uint16_t record_id;
+      uint16_t record_length;
+      char description[32];
+    };
+    #pragma pack(pop)
+
+    // Read header
+    LASHeader header;
+    file.read(reinterpret_cast<char*>(&header), sizeof(LASHeader));
+
+  if (header.number_of_variable_length_records > 0) {
+    file.seekg(header.header_size); 
+
+    for (uint32_t i = 0; i < header.number_of_variable_length_records; ++i) {
+      VLR_Header vlr_header;
+      file.read(reinterpret_cast<char*>(&vlr_header), sizeof(VLR_Header));
+
+      if (strncmp(vlr_header.user_id, "LASF_Projection", 15) == 0) {
+        std::vector<char> crs_data(vlr_header.record_length);
+        file.read(crs_data.data(), vlr_header.record_length);
+        
+        std::string crs_info(crs_data.data(), vlr_header.record_length);
+        RS_DEBUG("Coordinate System: %s", crs_info.c_str());
+      }
+      else {
+        // Skip other VLRs
+        file.seekg(vlr_header.record_length, std::ios::cur);
+      }
+    }
+  }
+    // Verify LAS signature
+    if (strncmp(header.file_signature, "LASF", 4) != 0) {
+      throw std::runtime_error("Invalid LAS file signature.");
+    }
+
+    m_point_count = header.number_of_point_records;
+    const int size_of_data = m_point_count * 6; // count * 6(point, color)
+    m_data.resize(size_of_data);
+
+    // Seek to point data
+    file.seekg(header.offset_to_point_data);
+
+    #pragma pack(push, 1)
+    // Point Data Record Format 0, 1, 2, 3 structures
+    struct LASPoint_Format0 {
+      int32_t x;
+      int32_t y;
+      int32_t z;
+      uint16_t intensity;
+      uint8_t return_number : 3;
+      uint8_t number_of_returns : 3;
+      uint8_t scan_direction_flag : 1;
+      uint8_t edge_of_flight_line : 1;
+      uint8_t classification;
+      int8_t scan_angle_rank;
+      uint8_t user_data;
+      uint16_t point_source_id;
+    };
+
+    struct LASPoint_Format1 : LASPoint_Format0 {
+      double gps_time;
+    };
+
+    struct LASPoint_Format2 : LASPoint_Format0 {
+      uint16_t red;
+      uint16_t green;
+      uint16_t blue;
+    };
+
+    struct LASPoint_Format3 : LASPoint_Format1 {
+      uint16_t red;
+      uint16_t green;
+      uint16_t blue;
+    };
+    #pragma pack(pop)
+
+
+    const size_t point_record_size = header.point_data_record_length;
+    std::vector<char> buffer(m_point_count * point_record_size);
+    file.read(buffer.data(), buffer.size());
+    file.close();
+
+    int index = 0;
+    
+    // Format 0: Base format - no RGB, no GPS
+  if (header.point_data_format == 0) {
+    for (uint32_t i = 0; i < m_point_count; ++i) {
+      const char* point_data = buffer.data() + i * point_record_size;
+
+      LASPoint_Format0 point;
+      memcpy(&point, point_data, std::min(sizeof(LASPoint_Format0), point_record_size));
+
+      // Convert scaled integer coordinates to float
+      float x = static_cast<float>(point.x) * header.x_scale_factor;
+      float y = static_cast<float>(point.y) * header.y_scale_factor;
+      float z = static_cast<float>(point.z) * header.z_scale_factor;
+
+      // Use intensity as grayscale color
+      float intensity = static_cast<float>(point.intensity) / 65535.0f;
+
+      m_data[index++] = static_cast<float>(x);
+      m_data[index++] = static_cast<float>(y);
+      m_data[index++] = static_cast<float>(z);
+      m_data[index++] = intensity;
+      m_data[index++] = intensity;
+      m_data[index++] = intensity;
+    }
+  }
+  // Format 1: Format 0 + GPS Time - no RGB
+  else if (header.point_data_format == 1) {
+    for (uint32_t i = 0; i < m_point_count; ++i) {
+      const char* point_data = buffer.data() + i * point_record_size;
+
+      LASPoint_Format1 point;
+      memcpy(&point, point_data, std::min(sizeof(LASPoint_Format1), point_record_size));
+
+      // Convert scaled integer coordinates to float
+      float x = static_cast<float>(point.x) * header.x_scale_factor;
+      float y = static_cast<float>(point.y) * header.y_scale_factor;
+      float z = static_cast<float>(point.z) * header.z_scale_factor;
+
+      // Use intensity as grayscale color
+      float intensity = static_cast<float>(point.intensity) / 65535.0f;
+
+      m_data[index++] = static_cast<float>(x);
+      m_data[index++] = static_cast<float>(y);
+      m_data[index++] = static_cast<float>(z);
+      m_data[index++] = intensity;
+      m_data[index++] = intensity;
+      m_data[index++] = intensity;
+    }
+  }
+  // Format 2: Format 0 + RGB - no GPS
+  else if (header.point_data_format == 2) {
+    for (uint32_t i = 0; i < m_point_count; ++i) {
+      const char* point_data = buffer.data() + i * point_record_size;
+
+      LASPoint_Format2 point;
+      memcpy(&point, point_data, std::min(sizeof(LASPoint_Format2), point_record_size));
+
+      // Convert scaled integer coordinates to float
+      float x = static_cast<float>(point.x) * header.x_scale_factor;
+      float y = static_cast<float>(point.y) * header.y_scale_factor;
+      float z = static_cast<float>(point.z) * header.z_scale_factor;
+
+      // Convert RGB from 16-bit to normalized float [0, 1]
+      float r = static_cast<float>(point.red) / 65535.0f;
+      float g = static_cast<float>(point.green) / 65535.0f;
+      float b = static_cast<float>(point.blue) / 65535.0f;
+
+      m_data[index++] = static_cast<float>(x);
+      m_data[index++] = static_cast<float>(y);
+      m_data[index++] = static_cast<float>(z);
+      m_data[index++] = r;
+      m_data[index++] = g;
+      m_data[index++] = b;
+    }
+  }
+  // Format 3: Format 1 + RGB (GPS Time + RGB)
+  else if (header.point_data_format == 3) {
+    for (uint32_t i = 0; i < m_point_count; ++i) {
+      const char* point_data = buffer.data() + i * point_record_size;
+
+      LASPoint_Format3 point;
+      memcpy(&point, point_data, std::min(sizeof(LASPoint_Format3), point_record_size));
+
+      // Convert scaled integer coordinates to float
+      float x = static_cast<float>(point.x) * header.x_scale_factor;
+      float y = static_cast<float>(point.y) * header.y_scale_factor;
+      float z = static_cast<float>(point.z) * header.z_scale_factor;
+
+      // Convert RGB from 16-bit to normalized float [0, 1]
+      float r = static_cast<float>(point.red) / 65535.0f;
+      float g = static_cast<float>(point.green) / 65535.0f;
+      float b = static_cast<float>(point.blue) / 65535.0f;
+
+      m_data[index++] = static_cast<float>(x);
+      m_data[index++] = static_cast<float>(y);
+      m_data[index++] = static_cast<float>(z);
+      m_data[index++] = r;
+      m_data[index++] = g;
+      m_data[index++] = b;
+    }
+  }
+    else {
+      throw std::runtime_error("Unsupported LAS point data format.");
+    }
+
+    // Print point count
+    RS_DEBUG("LAS Point Count: %d", m_point_count);
+
+    // Print system identifier
+    RS_DEBUG("System Identifier: %s", std::string(header.system_identifier, 32).c_str());
+
+    // Print generating software
+    RS_DEBUG("Generating Software: %s", std::string(header.generating_software, 32).c_str());
+
+    // Print offsets
+    RS_DEBUG("X Offset: %f", header.x_offset);
+    RS_DEBUG("Y Offset: %f", header.y_offset);
+    RS_DEBUG("Z Offset: %f", header.z_offset);
+
+    file.close();
   }
 
   void RSPointClipper::CreateBufferObject()
