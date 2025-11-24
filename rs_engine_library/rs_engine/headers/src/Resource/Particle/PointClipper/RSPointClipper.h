@@ -74,6 +74,12 @@ namespace RS_PointClipper
      */
     void ReadPlyPointData(std::ifstream& file);
 
+    /**
+     * @brief Read LAS Point Data
+     * @param file file to read
+     */
+    void ReadLasPointData(std::ifstream& file);
+
 
     /**
      * @brief Create Buffer Object
@@ -147,6 +153,11 @@ namespace RS_PointClipper
      * @brief Reset point clipper data
      */
     void ResetData();
+
+    /**
+     * @brief Set camera position to fit the point cloud
+     */
+    void SetCameraPosition();
 
   private:
     int m_point_count = 0; ///< Point count

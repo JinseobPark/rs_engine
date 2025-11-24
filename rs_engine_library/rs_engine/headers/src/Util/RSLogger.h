@@ -22,6 +22,7 @@ This system write the log message to the file.
 #include <sstream>
 #include <cstring>
 #include <cstdio>
+#include <string>
 #include <time.h>
 #include "RSLogger_define.h"
 
@@ -65,6 +66,18 @@ namespace RS_Logger
          */
 		void WriteLog(const char* func_name, int line, int lv, const char* str, ...) const;
 
+	    /**
+		 * @brief Write log message (std::string overload)
+         * @param func_name function name
+		 * @param line line number
+		 * @param lv log level
+		 * @param str log message as std::string
+         */
+		void WriteLog(const char* func_name, int line, int lv, const std::string& str) const
+		{
+			WriteLog(func_name, line, lv, str.c_str());
+		}
+
 
 	    /**
 		 * @brief Print Log message to console
@@ -76,6 +89,18 @@ namespace RS_Logger
 		 * @return false for assert.
 		 */
 		void PrintLog(const char* func_name, int line, int lv, const char* str, ...) const;
+
+	    /**
+		 * @brief Print Log message to console (std::string overload)
+		 * @param func_name	function name
+		 * @param line line number
+		 * @param lv log level
+		 * @param str log message as std::string
+		 */
+		void PrintLog(const char* func_name, int line, int lv, const std::string& str) const
+		{
+			PrintLog(func_name, line, lv, str.c_str());
+		}
 
 
       /**
@@ -89,6 +114,19 @@ namespace RS_Logger
      */
     bool FatalLog(const char* func_name, int line, int lv, const char* str, ...) const;
 
+      /**
+     * @brief Debug Log (std::string overload)
+     * @param func_name function name 
+     * @param line line number
+     * @param lv log level
+     * @param str log message as std::string
+     * @return false for assert.
+     */
+    bool FatalLog(const char* func_name, int line, int lv, const std::string& str) const
+    {
+		return FatalLog(func_name, line, lv, str.c_str());
+    }
+
 	    /**
 		 * @brief Write message log
 		 * @param lv log level
@@ -96,6 +134,16 @@ namespace RS_Logger
 		 * @param ... variable arguments
          */
     void WriteMessageLog(int lv, const char* str, ...) const;
+
+	    /**
+		 * @brief Write message log (std::string overload)
+		 * @param lv log level
+		 * @param str log message as std::string
+         */
+    void WriteMessageLog(int lv, const std::string& str) const
+    {
+		WriteMessageLog(lv, str.c_str());
+    }
 
     protected:
 		int log_level_; /**< log level */
