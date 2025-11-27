@@ -431,22 +431,24 @@ namespace _RS_Internal
 
 	void RSBufferManager::UpdateKernelUBO(const float* kernel, const float divisor, const float offset)
 	{
-    // UBO layout (std140):
-    // float kernel[12] at offset 0  (9 values used, 3 padding)
-    // float divisor at offset 48
-    // float offset at offset 52
+    // UBO layout (std140) - 64 bytes total:
+    // vec4 kernel_row0 at offset 0   (kernel[0,1,2], padding)
+    // vec4 kernel_row1 at offset 16  (kernel[3,4,5], padding)
+    // vec4 kernel_row2 at offset 32  (kernel[6,7,8], padding)
+    // vec4 params at offset 48       (divisor, offset, padding, padding)
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_kernel_ubo);
 
-    // Upload kernel (12 floats for std140 alignment, only 9 used)
-    float kernel_padded[12] = {0.0f};
-    for (int i = 0; i < 9; ++i)
-      kernel_padded[i] = kernel[i];
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, 12 * sizeof(float), kernel_padded);
+    // Upload kernel rows as vec4
+    float row0[4] = { kernel[0], kernel[1], kernel[2], 0.0f };
+    float row1[4] = { kernel[3], kernel[4], kernel[5], 0.0f };
+    float row2[4] = { kernel[6], kernel[7], kernel[8], 0.0f };
+    float params[4] = { divisor, offset, 0.0f, 0.0f };
 
-    // Upload divisor and offset
-    glBufferSubData(GL_UNIFORM_BUFFER, 48, sizeof(float), &divisor);
-    glBufferSubData(GL_UNIFORM_BUFFER, 52, sizeof(float), &offset);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0,  16, row0);
+    glBufferSubData(GL_UNIFORM_BUFFER, 16, 16, row1);
+    glBufferSubData(GL_UNIFORM_BUFFER, 32, 16, row2);
+    glBufferSubData(GL_UNIFORM_BUFFER, 48, 16, params);
 
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}

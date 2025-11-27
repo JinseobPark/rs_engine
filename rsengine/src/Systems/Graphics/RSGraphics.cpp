@@ -919,13 +919,11 @@ namespace RS_Graphics
 
 		DrawPickedObject();
 
-		if (m_rendering_flag & RenderingFlag::SKYBOX)
-			SkyboxDraw();
-
-		CompositeHUD();
+		// Unbind FINAL FBO before post-processing (Scene only, Depth preserved)
 		buffer_manager->UnbindFbo(FboType::FINAL);
 
-		// Kernel-based image post-processing (after scene, before final output)
+		// Kernel-based image post-processing (Scene only, excludes Skybox & HUD)
+		// Note: Only GL_COLOR_BUFFER_BIT is cleared, Depth Buffer is preserved
 		if (m_rendering_flag & RenderingFlag::IMAGE_KERNEL)
 		{
 			DrawKernelPostProcess();
@@ -934,6 +932,18 @@ namespace RS_Graphics
 		{
 			ClearKernelPostProcess();
 		}
+
+		// Re-bind FINAL FBO to draw Skybox and HUD (after post-processing)
+		buffer_manager->BindFbo(FboType::FINAL);
+
+		// Skybox uses GL_LEQUAL depth test, draws only where depth == 1.0
+		if (m_rendering_flag & RenderingFlag::SKYBOX)
+			SkyboxDraw();
+
+		// HUD is composited with alpha blending (no depth test)
+		CompositeHUD();
+
+		buffer_manager->UnbindFbo(FboType::FINAL);
 
 	}
 
@@ -1301,7 +1311,7 @@ namespace RS_Graphics
       m_kernel_data.is_dirty = false;
     }
 
-    // Get final texture as initial input
+    // Get FBOs
     const auto final_fbo = dynamic_cast<_RS_Internal::RSFinalFbo*>(bm->GetFboItem(FboType::FINAL));
     const auto post_a_fbo = dynamic_cast<_RS_Internal::RSPostProcessFbo*>(bm->GetFboItem(FboType::POST_PROCESS_A));
     const auto post_b_fbo = dynamic_cast<_RS_Internal::RSPostProcessFbo*>(bm->GetFboItem(FboType::POST_PROCESS_B));
@@ -1311,26 +1321,24 @@ namespace RS_Graphics
 
     rm->GetShaderManager()->Use(RSShaderNames::POST_KERNEL_FILTER);
 
-    // First pass: FINAL -> POST_A
-    // Subsequent passes: ping-pong between POST_A and POST_B
-    // Final result goes back to FINAL
+    // Disable depth test for full-screen quad rendering
+    glDisable(GL_DEPTH_TEST);
+
+    // Ping-pong rendering pattern:
+    // Pass 0: FINAL -> POST_A
+    // Pass 1: POST_A -> POST_B
+    // Pass 2: POST_B -> POST_A
+    // Pass 3: POST_A -> POST_B
+    // Final copy: last output -> FINAL
 
     unsigned int input_texture = final_fbo->GetFinalTexture();
+    FboType last_output_fbo = FboType::POST_PROCESS_A;
 
     for (int pass = 0; pass < pass_count; ++pass)
     {
-      // Determine output FBO
-      FboType output_fbo_type;
-      if (pass == pass_count - 1)
-      {
-        // Last pass: output to FINAL
-        output_fbo_type = FboType::FINAL;
-      }
-      else
-      {
-        // Alternate between A and B
-        output_fbo_type = (pass % 2 == 0) ? FboType::POST_PROCESS_A : FboType::POST_PROCESS_B;
-      }
+      // Determine output FBO (alternate between A and B)
+      FboType output_fbo_type = (pass % 2 == 0) ? FboType::POST_PROCESS_A : FboType::POST_PROCESS_B;
+      last_output_fbo = output_fbo_type;
 
       bm->BindFbo(output_fbo_type);
       glClear(GL_COLOR_BUFFER_BIT);
@@ -1343,11 +1351,26 @@ namespace RS_Graphics
       bm->UnbindFbo(output_fbo_type);
 
       // Set input for next pass
-      if (pass < pass_count - 1)
-      {
-        input_texture = (pass % 2 == 0) ? post_a_fbo->GetColorTexture() : post_b_fbo->GetColorTexture();
-      }
+      input_texture = (pass % 2 == 0) ? post_a_fbo->GetColorTexture() : post_b_fbo->GetColorTexture();
     }
+
+    // Final copy: POST_PROCESS -> FINAL (using simple texture copy shader)
+    rm->GetShaderManager()->Use(RSShaderNames::QUAD_TEXTURE);
+    bm->BindFbo(FboType::FINAL);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glActiveTexture(GL_TEXTURE0);
+    unsigned int final_input = (last_output_fbo == FboType::POST_PROCESS_A) 
+                               ? post_a_fbo->GetColorTexture() 
+                               : post_b_fbo->GetColorTexture();
+    glBindTexture(GL_TEXTURE_2D, final_input);
+
+    bm->DrawQuad();
+
+    bm->UnbindFbo(FboType::FINAL);
+
+    // Re-enable depth test
+    glEnable(GL_DEPTH_TEST);
 
     rm->GetShaderManager()->UnbindShader();
 	}
