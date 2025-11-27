@@ -925,6 +925,16 @@ namespace RS_Graphics
 		CompositeHUD();
 		buffer_manager->UnbindFbo(FboType::FINAL);
 
+		// Kernel-based image post-processing (after scene, before final output)
+		if (m_rendering_flag & RenderingFlag::IMAGE_KERNEL)
+		{
+			DrawKernelPostProcess();
+		}
+		else if (b_rendering_flag_dirty)
+		{
+			ClearKernelPostProcess();
+		}
+
 	}
 
 	void RSGraphics::DrawShadowMapDebug() const
@@ -1277,6 +1287,86 @@ namespace RS_Graphics
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     buffer_manager->UnbindFbo(FboType::SSR);
+	}
+
+	void RSGraphics::DrawKernelPostProcess()
+	{
+    const auto rm = p_resource_manager;
+    const auto bm = rm->GetBufferManager();
+
+    // Update UBO if kernel data is dirty
+    if (m_kernel_data.is_dirty)
+    {
+      bm->UpdateKernelUBO(m_kernel_data.kernel, m_kernel_data.divisor, m_kernel_data.offset);
+      m_kernel_data.is_dirty = false;
+    }
+
+    // Get final texture as initial input
+    const auto final_fbo = dynamic_cast<_RS_Internal::RSFinalFbo*>(bm->GetFboItem(FboType::FINAL));
+    const auto post_a_fbo = dynamic_cast<_RS_Internal::RSPostProcessFbo*>(bm->GetFboItem(FboType::POST_PROCESS_A));
+    const auto post_b_fbo = dynamic_cast<_RS_Internal::RSPostProcessFbo*>(bm->GetFboItem(FboType::POST_PROCESS_B));
+
+    // Clamp pass count to 1-4
+    const int pass_count = glm::clamp(m_kernel_data.pass_count, 1, 4);
+
+    rm->GetShaderManager()->Use(RSShaderNames::POST_KERNEL_FILTER);
+
+    // First pass: FINAL -> POST_A
+    // Subsequent passes: ping-pong between POST_A and POST_B
+    // Final result goes back to FINAL
+
+    unsigned int input_texture = final_fbo->GetFinalTexture();
+
+    for (int pass = 0; pass < pass_count; ++pass)
+    {
+      // Determine output FBO
+      FboType output_fbo_type;
+      if (pass == pass_count - 1)
+      {
+        // Last pass: output to FINAL
+        output_fbo_type = FboType::FINAL;
+      }
+      else
+      {
+        // Alternate between A and B
+        output_fbo_type = (pass % 2 == 0) ? FboType::POST_PROCESS_A : FboType::POST_PROCESS_B;
+      }
+
+      bm->BindFbo(output_fbo_type);
+      glClear(GL_COLOR_BUFFER_BIT);
+
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, input_texture);
+
+      bm->DrawQuad();
+
+      bm->UnbindFbo(output_fbo_type);
+
+      // Set input for next pass
+      if (pass < pass_count - 1)
+      {
+        input_texture = (pass % 2 == 0) ? post_a_fbo->GetColorTexture() : post_b_fbo->GetColorTexture();
+      }
+    }
+
+    rm->GetShaderManager()->UnbindShader();
+	}
+
+	void RSGraphics::ClearKernelPostProcess()
+	{
+    const auto buffer_manager = p_resource_manager->GetBufferManager();
+
+    // Clear POST_PROCESS_A
+    buffer_manager->BindFbo(FboType::POST_PROCESS_A);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    buffer_manager->UnbindFbo(FboType::POST_PROCESS_A);
+
+    // Clear POST_PROCESS_B
+    buffer_manager->BindFbo(FboType::POST_PROCESS_B);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    buffer_manager->UnbindFbo(FboType::POST_PROCESS_B);
 	}
 
 } // namespace rs

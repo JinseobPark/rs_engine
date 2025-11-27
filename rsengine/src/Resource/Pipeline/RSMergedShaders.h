@@ -7,7 +7,7 @@
  * 
  * 
  * \author Jinseob Park
- * \date   2025/11/24
+ * \date   2025/11/27
  *****************************************************************************/
 #ifndef RS_MERGED_SHADER_H_
 #define RS_MERGED_SHADER_H_
@@ -163,6 +163,8 @@ extern const char* PointVtkRender_vs;
 extern const char* Point_gbuffer_fs;
 
 extern const char* Point_gbuffer_vs;
+
+extern const char* PostKernelFilter_fs;
 
 extern const char* QuadTexture_fs;
 

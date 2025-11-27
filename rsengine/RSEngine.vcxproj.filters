@@ -273,6 +273,9 @@
     <ClCompile Include="src\Resource\Pipeline\FBO\RSSsrBlurFbo.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSPostProcessFbo.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\RSEngine.h">
@@ -561,6 +564,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="src\Resource\Pipeline\FBO\RSSsrBlurFbo.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSPostProcessFbo.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

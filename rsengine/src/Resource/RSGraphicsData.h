@@ -100,6 +100,102 @@ struct RSGraphicsData
 
 
 /**
+ * @brief Kernel preset types for image post-processing
+ */
+enum class KernelPreset : uint8_t
+{
+  NONE = 0,       ///< Identity (no effect)
+  EDGE_DETECT,    ///< Edge detection kernel
+  SHARPEN,        ///< Sharpening kernel
+  BOX_BLUR,       ///< 3x3 Box blur
+  GAUSSIAN_BLUR,  ///< 3x3 Gaussian blur approximation
+  EMBOSS,         ///< Emboss effect
+  CUSTOM          ///< User-defined custom kernel
+};
+
+/**
+ * @brief Kernel post-process data structure
+ * Contains 3x3 kernel matrix, divisor, offset, and pass count
+ */
+struct RSKernelPostProcessData
+{
+  float kernel[9] = {    ///< 3x3 kernel matrix (row-major)
+    0.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f
+  };
+  float divisor = 1.0f;  ///< Kernel divisor (normalization)
+  float offset = 0.0f;   ///< Color offset after convolution
+  int pass_count = 1;    ///< Number of passes (1-4, for chaining)
+  KernelPreset preset = KernelPreset::NONE;  ///< Current preset
+  bool is_dirty = true;  ///< Flag to update UBO
+
+  /**
+   * @brief Set kernel from preset
+   * @param preset_ Kernel preset type
+   */
+  void SetPreset(KernelPreset preset_)
+  {
+    preset = preset_;
+    is_dirty = true;
+    switch (preset_)
+    {
+    case KernelPreset::NONE:
+      // Identity kernel
+      kernel[0] = 0.0f; kernel[1] = 0.0f; kernel[2] = 0.0f;
+      kernel[3] = 0.0f; kernel[4] = 1.0f; kernel[5] = 0.0f;
+      kernel[6] = 0.0f; kernel[7] = 0.0f; kernel[8] = 0.0f;
+      divisor = 1.0f; offset = 0.0f;
+      break;
+    case KernelPreset::EDGE_DETECT:
+      // Laplacian edge detection
+      kernel[0] = -1.0f; kernel[1] = -1.0f; kernel[2] = -1.0f;
+      kernel[3] = -1.0f; kernel[4] =  8.0f; kernel[5] = -1.0f;
+      kernel[6] = -1.0f; kernel[7] = -1.0f; kernel[8] = -1.0f;
+      divisor = 1.0f; offset = 0.0f;
+      break;
+    case KernelPreset::SHARPEN:
+      kernel[0] =  0.0f; kernel[1] = -1.0f; kernel[2] =  0.0f;
+      kernel[3] = -1.0f; kernel[4] =  5.0f; kernel[5] = -1.0f;
+      kernel[6] =  0.0f; kernel[7] = -1.0f; kernel[8] =  0.0f;
+      divisor = 1.0f; offset = 0.0f;
+      break;
+    case KernelPreset::BOX_BLUR:
+      kernel[0] = 1.0f; kernel[1] = 1.0f; kernel[2] = 1.0f;
+      kernel[3] = 1.0f; kernel[4] = 1.0f; kernel[5] = 1.0f;
+      kernel[6] = 1.0f; kernel[7] = 1.0f; kernel[8] = 1.0f;
+      divisor = 9.0f; offset = 0.0f;
+      break;
+    case KernelPreset::GAUSSIAN_BLUR:
+      // 3x3 Gaussian approximation
+      kernel[0] = 1.0f; kernel[1] = 2.0f; kernel[2] = 1.0f;
+      kernel[3] = 2.0f; kernel[4] = 4.0f; kernel[5] = 2.0f;
+      kernel[6] = 1.0f; kernel[7] = 2.0f; kernel[8] = 1.0f;
+      divisor = 16.0f; offset = 0.0f;
+      break;
+    case KernelPreset::EMBOSS:
+      kernel[0] = -2.0f; kernel[1] = -1.0f; kernel[2] = 0.0f;
+      kernel[3] = -1.0f; kernel[4] =  1.0f; kernel[5] = 1.0f;
+      kernel[6] =  0.0f; kernel[7] =  1.0f; kernel[8] = 2.0f;
+      divisor = 1.0f; offset = 0.5f;
+      break;
+    case KernelPreset::CUSTOM:
+      // Keep current kernel values
+      break;
+    }
+  }
+
+  /**
+   * @brief Reset to identity kernel
+   */
+  void Reset()
+  {
+    SetPreset(KernelPreset::NONE);
+    pass_count = 1;
+  }
+};
+
+/**
  * @brief Rendering flag enumeration.
  * It allows to overlap flags by bitwise operation.
  * list : NONE, SHADOW, DEFERRED, SSAO
@@ -116,6 +212,7 @@ enum class RenderingFlag : uint32_t
   SSAO = 1 << 3,
   SKYBOX = 1 << 4,
   SSR = 1 << 5,
+  IMAGE_KERNEL = 1 << 6,  ///< Kernel-based image post-processing
 };
 
 static bool operator&(RenderingFlag lhs, RenderingFlag rhs)

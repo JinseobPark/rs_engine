@@ -60,6 +60,7 @@ enum class RSShaderNames : std::uint8_t
   DEFERRED_SSAO_BLUR,
   DEFERRED_SCREEN_SPACE_REFLECTION,
   DEFERRED_SCREEN_SPACE_REFLECTION_BLUR,
+  POST_KERNEL_FILTER,  ///< Kernel-based image post-processing shader
 	SHADER_COUNT
 };
 

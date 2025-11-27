@@ -266,6 +266,46 @@ public:
    */
   unsigned int GetSSRBlurTexture();
 
+  /**
+   * @brief Get Post-Process A texture buffer
+   * @return Post-process A texture buffer id (uint)
+   */
+  unsigned int GetPostProcessATexture();
+
+  /**
+   * @brief Get Post-Process B texture buffer
+   * @return Post-process B texture buffer id (uint)
+   */
+  unsigned int GetPostProcessBTexture();
+
+  // ********************************//
+  // ****** Kernel UBO Control ******//
+  // ********************************//
+
+  /**
+   * @brief Create kernel UBO for image post-processing
+   */
+  void CreateKernelUBO();
+
+  /**
+   * @brief Update kernel UBO data
+   * @param kernel 3x3 kernel array (9 floats)
+   * @param divisor Normalization divisor
+   * @param offset Color offset
+   */
+  void UpdateKernelUBO(const float* kernel, float divisor, float offset);
+
+  /**
+   * @brief Release kernel UBO
+   */
+  void ReleaseKernelUBO();
+
+  /**
+   * @brief Get kernel UBO id
+   * @return Kernel UBO id (uint)
+   */
+  unsigned int GetKernelUBO() const { return m_kernel_ubo; }
+
 	// *********************//
 	// ****** Skybox *******//
 	// *********************//
@@ -333,6 +373,8 @@ private:
   std::map<FboType, RSFBO*> m_fbo_map;	///< FBO map for FBO type
 
   SkyboxTheme skybox_theme = SkyboxTheme::DEFAULT;	///< Skybox theme
+
+  unsigned int m_kernel_ubo = 0;  ///< Kernel UBO for image post-processing
 };
 } // namespace _RS_Internal
 
