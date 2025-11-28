@@ -304,11 +304,11 @@ namespace RS_Handler
         }
 
         // Divisor and offset sliders
-        if (ImGui::SliderFloat("Divisor", &kernel_data.divisor, 0.1f, 20.0f))
+        if (ImGui::SliderFloat("Divisor", &kernel_data.divisor, 0.1f, 20.0f, "%.1f"))
         {
           kernel_data.is_dirty = true;
         }
-        if (ImGui::SliderFloat("Offset", &kernel_data.offset, -1.0f, 1.0f))
+        if (ImGui::SliderFloat("Offset", &kernel_data.offset, -1.0f, 1.0f, "%.1f"))
         {
           kernel_data.is_dirty = true;
         }
