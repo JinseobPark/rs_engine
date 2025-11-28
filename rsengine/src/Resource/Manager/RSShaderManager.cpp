@@ -101,6 +101,10 @@ namespace RS_Shader
     const auto post_kernel_filter = new RSShader(DeferredQuad_vs, PostKernelFilter_fs, false);
     shaders_map_[RSShaderNames::POST_KERNEL_FILTER] = post_kernel_filter;
 
+    // Color filter post-processing shader (grayscale, channels, sepia, etc.)
+    const auto post_color_filter = new RSShader(DeferredQuad_vs, PostColorFilter_fs, false);
+    shaders_map_[RSShaderNames::POST_COLOR_FILTER] = post_color_filter;
+
 
 
 		// Compute Shaders

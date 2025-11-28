@@ -128,6 +128,18 @@ namespace RS_Graphics
 		 */
 		const RSKernelPostProcessData& GetKernelDataConst() const { return m_kernel_data; }
 
+    /**
+     * @brief Get color filter data reference for ImGui editing
+     * @return Reference to color filter data
+		 */
+		RSColorFilterData& GetColorFilterData() { return m_color_filter_data; }
+
+    /**
+     * @brief Get color filter data const reference
+     * @return Const reference to color filter data
+		 */
+		const RSColorFilterData& GetColorFilterDataConst() const { return m_color_filter_data; }
+
 	protected:
 
     /**
@@ -290,6 +302,17 @@ namespace RS_Graphics
 		 */
 		void ClearKernelPostProcess();
 
+    /**
+     * @brief Draw color filter post-processing
+     * Applies grayscale, channel isolation, sepia, invert effects
+		 */
+		void DrawColorFilter();
+
+    /**
+     * @brief Clear color filter state
+		 */
+		void ClearColorFilter();
+
 private:
     /**
 		 * @brief Draw shadow map for debug
@@ -326,6 +349,7 @@ private:
 	  RSResourceManager* p_resource_manager = nullptr; ///< Resource manager pointer.
 
     RSKernelPostProcessData m_kernel_data; ///< Kernel post-process data for image processing
+    RSColorFilterData m_color_filter_data;  ///< Color filter data for image processing
 
 		
 	};

@@ -30,6 +30,7 @@ namespace _RS_Internal
 		CreateFboItems(buffer_width, buffer_height);
 
 		CreateKernelUBO();
+		CreateColorFilterUBO();
 
 		InitializeConfiguration();
 	}
@@ -50,6 +51,7 @@ namespace _RS_Internal
 
 		ReleaseFboItems();
 		ReleaseKernelUBO();
+		ReleaseColorFilterUBO();
 	}
 	
 	void RSBufferManager::InitializeSkybox()
@@ -459,6 +461,47 @@ namespace _RS_Internal
     {
       glDeleteBuffers(1, &m_kernel_ubo);
       m_kernel_ubo = 0;
+    }
+	}
+
+	void RSBufferManager::CreateColorFilterUBO()
+	{
+    // UBO layout (std140) - 32 bytes total:
+    // vec4 weights_intensity at offset 0  (weights.xyz, intensity)
+    // vec4 params at offset 16            (mode, padding, padding, padding)
+
+    glGenBuffers(1, &m_color_filter_ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_color_filter_ubo);
+    glBufferData(GL_UNIFORM_BUFFER, 32, nullptr, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    // Bind to binding point 1
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_color_filter_ubo);
+	}
+
+	void RSBufferManager::UpdateColorFilterUBO(int mode, const float* weights, float intensity)
+	{
+    // UBO layout (std140) - 32 bytes total:
+    // vec4 weights_intensity at offset 0  (weights[0,1,2], intensity)
+    // vec4 params at offset 16            (mode, padding, padding, padding)
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_color_filter_ubo);
+
+    float weights_intensity[4] = { weights[0], weights[1], weights[2], intensity };
+    float params[4] = { static_cast<float>(mode), 0.0f, 0.0f, 0.0f };
+
+    glBufferSubData(GL_UNIFORM_BUFFER, 0,  16, weights_intensity);
+    glBufferSubData(GL_UNIFORM_BUFFER, 16, 16, params);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
+
+	void RSBufferManager::ReleaseColorFilterUBO()
+	{
+    if (m_color_filter_ubo != 0)
+    {
+      glDeleteBuffers(1, &m_color_filter_ubo);
+      m_color_filter_ubo = 0;
     }
 	}
 

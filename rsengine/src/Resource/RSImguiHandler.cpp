@@ -273,6 +273,60 @@ namespace RS_Handler
         any_property_changed = true;
       }
 
+      // Color Filter Post-Processing checkbox
+      bool b_color_filter = RS_Graphics::mRSGRAPHICS->GetRenderingFlagBool(RenderingFlag::COLOR_FILTER);
+      if (ImGui::Checkbox("Color Filter", &b_color_filter))
+      {
+        RS_Graphics::mRSGRAPHICS->SetRenderingFlag(RenderingFlag::COLOR_FILTER, b_color_filter);
+        any_property_changed = true;
+      }
+
+      // Color Filter controls (only show when enabled)
+      if (b_color_filter)
+      {
+        RSColorFilterData& color_data = RS_Graphics::mRSGRAPHICS->GetColorFilterData();
+
+        ImGui::Separator();
+        ImGui::Text("Color Filter");
+
+        // Mode combo box
+        const char* mode_names[] = { "None", "Grayscale", "Red", "Green", "Blue", "Sepia", "Invert", "Custom" };
+        int current_mode = static_cast<int>(color_data.mode);
+        if (ImGui::Combo("Filter Mode", &current_mode, mode_names, IM_ARRAYSIZE(mode_names)))
+        {
+          color_data.SetMode(static_cast<ColorFilterMode>(current_mode));
+        }
+
+        // Intensity slider
+        if (ImGui::SliderFloat("Intensity", &color_data.intensity, 0.0f, 1.0f, "%.1f"))
+        {
+          color_data.is_dirty = true;
+        }
+
+        // Custom weights (only show for Custom mode or in collapsing header)
+        if (color_data.mode == ColorFilterMode::CUSTOM || ImGui::CollapsingHeader("Custom Weights"))
+        {
+          ImGui::Text("RGB Weights:");
+          bool weights_changed = false;
+
+          if (ImGui::SliderFloat("R Weight", &color_data.weights[0], 0.0f, 2.0f, "%.2f")) weights_changed = true;
+          if (ImGui::SliderFloat("G Weight", &color_data.weights[1], 0.0f, 2.0f, "%.2f")) weights_changed = true;
+          if (ImGui::SliderFloat("B Weight", &color_data.weights[2], 0.0f, 2.0f, "%.2f")) weights_changed = true;
+
+          if (weights_changed)
+          {
+            color_data.mode = ColorFilterMode::CUSTOM;
+            color_data.is_dirty = true;
+          }
+
+          if (ImGui::Button("Reset Filter"))
+          {
+            color_data.Reset();
+          }
+        }
+        ImGui::Separator();
+      }
+
       // Image Kernel Post-Processing checkbox
       bool b_image_kernel = RS_Graphics::mRSGRAPHICS->GetRenderingFlagBool(RenderingFlag::IMAGE_KERNEL);
       if (ImGui::Checkbox("Image Kernel", &b_image_kernel))

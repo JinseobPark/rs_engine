@@ -306,6 +306,34 @@ public:
    */
   unsigned int GetKernelUBO() const { return m_kernel_ubo; }
 
+  // **************************************//
+  // ****** Color Filter UBO Control ******//
+  // **************************************//
+
+  /**
+   * @brief Create color filter UBO for image post-processing
+   */
+  void CreateColorFilterUBO();
+
+  /**
+   * @brief Update color filter UBO data
+   * @param mode Filter mode (0-7)
+   * @param weights RGB weights/multipliers
+   * @param intensity Filter intensity (0-1)
+   */
+  void UpdateColorFilterUBO(int mode, const float* weights, float intensity);
+
+  /**
+   * @brief Release color filter UBO
+   */
+  void ReleaseColorFilterUBO();
+
+  /**
+   * @brief Get color filter UBO id
+   * @return Color filter UBO id (uint)
+   */
+  unsigned int GetColorFilterUBO() const { return m_color_filter_ubo; }
+
 	// *********************//
 	// ****** Skybox *******//
 	// *********************//
@@ -375,6 +403,7 @@ private:
   SkyboxTheme skybox_theme = SkyboxTheme::DEFAULT;	///< Skybox theme
 
   unsigned int m_kernel_ubo = 0;  ///< Kernel UBO for image post-processing
+  unsigned int m_color_filter_ubo = 0;  ///< Color filter UBO for image post-processing
 };
 } // namespace _RS_Internal
 

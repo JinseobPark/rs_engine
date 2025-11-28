@@ -196,6 +196,74 @@ struct RSKernelPostProcessData
 };
 
 /**
+ * @brief Color filter mode for image post-processing
+ */
+enum class ColorFilterMode : uint8_t
+{
+  NONE = 0,         ///< No filter (original colors)
+  GRAYSCALE,        ///< Grayscale (luminance)
+  RED_CHANNEL,      ///< Red channel only
+  GREEN_CHANNEL,    ///< Green channel only
+  BLUE_CHANNEL,     ///< Blue channel only
+  SEPIA,            ///< Sepia tone
+  INVERT,           ///< Invert colors
+  CUSTOM            ///< Custom color weights
+};
+
+/**
+ * @brief Color filter data structure
+ * Contains filter mode and custom weights for color manipulation
+ */
+struct RSColorFilterData
+{
+  ColorFilterMode mode = ColorFilterMode::NONE;  ///< Current filter mode
+  float weights[3] = { 0.299f, 0.587f, 0.114f }; ///< RGB weights for grayscale. From BT.601 (NTSC standard)
+  float intensity = 1.0f;                         ///< Filter intensity (0=original, 1=full)
+  bool is_dirty = true;                           ///< Flag to update UBO
+
+  /**
+   * @brief Set filter mode and apply preset weights
+   */
+  void SetMode(ColorFilterMode mode_)
+  {
+    mode = mode_;
+    is_dirty = true;
+    switch (mode_)
+    {
+    case ColorFilterMode::NONE:
+      weights[0] = 1.0f; weights[1] = 1.0f; weights[2] = 1.0f;
+      break;
+    case ColorFilterMode::GRAYSCALE:
+      weights[0] = 0.299f; weights[1] = 0.587f; weights[2] = 0.114f;
+      break;
+    case ColorFilterMode::RED_CHANNEL:
+      weights[0] = 1.0f; weights[1] = 0.0f; weights[2] = 0.0f;
+      break;
+    case ColorFilterMode::GREEN_CHANNEL:
+      weights[0] = 0.0f; weights[1] = 1.0f; weights[2] = 0.0f;
+      break;
+    case ColorFilterMode::BLUE_CHANNEL:
+      weights[0] = 0.0f; weights[1] = 0.0f; weights[2] = 1.0f;
+      break;
+    case ColorFilterMode::SEPIA:
+      weights[0] = 1.2f; weights[1] = 1.0f; weights[2] = 0.8f;
+      break;
+    case ColorFilterMode::INVERT:
+      weights[0] = -1.0f; weights[1] = -1.0f; weights[2] = -1.0f;
+      break;
+    case ColorFilterMode::CUSTOM:
+      break;
+    }
+  }
+
+  void Reset()
+  {
+    SetMode(ColorFilterMode::NONE);
+    intensity = 1.0f;
+  }
+};
+
+/**
  * @brief Rendering flag enumeration.
  * It allows to overlap flags by bitwise operation.
  * list : NONE, SHADOW, DEFERRED, SSAO
@@ -212,7 +280,8 @@ enum class RenderingFlag : uint32_t
   SSAO = 1 << 3,
   SKYBOX = 1 << 4,
   SSR = 1 << 5,
-  IMAGE_KERNEL = 1 << 6,  ///< Kernel-based image post-processing
+  IMAGE_KERNEL = 1 << 6,   ///< Kernel-based image post-processing
+  COLOR_FILTER = 1 << 7,   ///< Color filter post-processing (grayscale, channels, etc.)
 };
 
 static bool operator&(RenderingFlag lhs, RenderingFlag rhs)
