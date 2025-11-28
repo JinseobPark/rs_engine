@@ -273,6 +273,144 @@ namespace RS_Handler
         any_property_changed = true;
       }
 
+      // Color Filter Post-Processing checkbox
+      bool b_color_filter = RS_Graphics::mRSGRAPHICS->GetRenderingFlagBool(RenderingFlag::COLOR_FILTER);
+      if (ImGui::Checkbox("Color Filter", &b_color_filter))
+      {
+        RS_Graphics::mRSGRAPHICS->SetRenderingFlag(RenderingFlag::COLOR_FILTER, b_color_filter);
+        any_property_changed = true;
+      }
+
+      // Color Filter controls (only show when enabled)
+      if (b_color_filter)
+      {
+        RSColorFilterData& color_data = RS_Graphics::mRSGRAPHICS->GetColorFilterData();
+
+        ImGui::Separator();
+        ImGui::Text("Color Filter");
+
+        // Mode combo box
+        const char* mode_names[] = { "None", "Grayscale", "Red", "Green", "Blue", "Sepia", "Invert", "Custom" };
+        int current_mode = static_cast<int>(color_data.mode);
+        if (ImGui::Combo("Filter Mode", &current_mode, mode_names, IM_ARRAYSIZE(mode_names)))
+        {
+          color_data.SetMode(static_cast<ColorFilterMode>(current_mode));
+        }
+
+        // Intensity slider
+        if (ImGui::SliderFloat("Intensity", &color_data.intensity, 0.0f, 1.0f, "%.1f"))
+        {
+          color_data.is_dirty = true;
+        }
+
+        // Custom weights (only show for Custom mode or in collapsing header)
+        if (color_data.mode == ColorFilterMode::CUSTOM || ImGui::CollapsingHeader("Custom Weights"))
+        {
+          ImGui::Text("RGB Weights:");
+          bool weights_changed = false;
+
+          if (ImGui::SliderFloat("R Weight", &color_data.weights[0], 0.0f, 2.0f, "%.2f")) weights_changed = true;
+          if (ImGui::SliderFloat("G Weight", &color_data.weights[1], 0.0f, 2.0f, "%.2f")) weights_changed = true;
+          if (ImGui::SliderFloat("B Weight", &color_data.weights[2], 0.0f, 2.0f, "%.2f")) weights_changed = true;
+
+          if (weights_changed)
+          {
+            color_data.mode = ColorFilterMode::CUSTOM;
+            color_data.is_dirty = true;
+          }
+
+          if (ImGui::Button("Reset Filter"))
+          {
+            color_data.Reset();
+          }
+        }
+        ImGui::Separator();
+      }
+
+      // Image Kernel Post-Processing checkbox
+      bool b_image_kernel = RS_Graphics::mRSGRAPHICS->GetRenderingFlagBool(RenderingFlag::IMAGE_KERNEL);
+      if (ImGui::Checkbox("Image Kernel", &b_image_kernel))
+      {
+        RS_Graphics::mRSGRAPHICS->SetRenderingFlag(RenderingFlag::IMAGE_KERNEL, b_image_kernel);
+        any_property_changed = true;
+      }
+
+      // Image Kernel controls (only show when enabled)
+      if (b_image_kernel)
+      {
+        RSKernelPostProcessData& kernel_data = RS_Graphics::mRSGRAPHICS->GetKernelData();
+
+        ImGui::Separator();
+        ImGui::Text("Kernel Post-Processing");
+
+        // Preset combo box
+        const char* preset_names[] = { "None", "Edge Detect", "Sharpen", "Box Blur", "Gaussian Blur", "Emboss", "Custom" };
+        int current_preset = static_cast<int>(kernel_data.preset);
+        if (ImGui::Combo("Preset", &current_preset, preset_names, IM_ARRAYSIZE(preset_names)))
+        {
+          kernel_data.SetPreset(static_cast<KernelPreset>(current_preset));
+        }
+
+        // Pass count slider (1-4)
+        if (ImGui::SliderInt("Pass Count", &kernel_data.pass_count, 1, 4))
+        {
+          kernel_data.is_dirty = true;
+        }
+
+        // Divisor and offset sliders
+        if (ImGui::SliderFloat("Divisor", &kernel_data.divisor, 0.1f, 20.0f, "%.1f"))
+        {
+          kernel_data.is_dirty = true;
+        }
+        if (ImGui::SliderFloat("Offset", &kernel_data.offset, -1.0f, 1.0f, "%.1f"))
+        {
+          kernel_data.is_dirty = true;
+        }
+
+        // 3x3 Kernel matrix editor (only for Custom preset)
+        if (kernel_data.preset == KernelPreset::CUSTOM || ImGui::CollapsingHeader("Kernel Matrix"))
+        {
+          ImGui::Text("3x3 Kernel Matrix:");
+          bool kernel_changed = false;
+
+          ImGui::PushItemWidth(60);
+          // Row 0
+          if (ImGui::InputFloat("##k0", &kernel_data.kernel[0], 0, 0, "%.2f")) kernel_changed = true;
+          ImGui::SameLine();
+          if (ImGui::InputFloat("##k1", &kernel_data.kernel[1], 0, 0, "%.2f")) kernel_changed = true;
+          ImGui::SameLine();
+          if (ImGui::InputFloat("##k2", &kernel_data.kernel[2], 0, 0, "%.2f")) kernel_changed = true;
+
+          // Row 1
+          if (ImGui::InputFloat("##k3", &kernel_data.kernel[3], 0, 0, "%.2f")) kernel_changed = true;
+          ImGui::SameLine();
+          if (ImGui::InputFloat("##k4", &kernel_data.kernel[4], 0, 0, "%.2f")) kernel_changed = true;
+          ImGui::SameLine();
+          if (ImGui::InputFloat("##k5", &kernel_data.kernel[5], 0, 0, "%.2f")) kernel_changed = true;
+
+          // Row 2
+          if (ImGui::InputFloat("##k6", &kernel_data.kernel[6], 0, 0, "%.2f")) kernel_changed = true;
+          ImGui::SameLine();
+          if (ImGui::InputFloat("##k7", &kernel_data.kernel[7], 0, 0, "%.2f")) kernel_changed = true;
+          ImGui::SameLine();
+          if (ImGui::InputFloat("##k8", &kernel_data.kernel[8], 0, 0, "%.2f")) kernel_changed = true;
+          ImGui::PopItemWidth();
+
+          if (kernel_changed)
+          {
+            kernel_data.preset = KernelPreset::CUSTOM;
+            kernel_data.is_dirty = true;
+          }
+
+          // Reset button
+          if (ImGui::Button("Reset Kernel"))
+          {
+            kernel_data.Reset();
+          }
+        }
+        ImGui::Separator();
+      }
+
       bool b_radio_changed = false;
       // Select RSDataRenderType of graphics data with radio button
       int render_num = static_cast<int>(graphics_data->data_render_type);

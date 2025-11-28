@@ -919,10 +919,41 @@ namespace RS_Graphics
 
 		DrawPickedObject();
 
+		// Unbind FINAL FBO before post-processing (Scene only, Depth preserved)
+		buffer_manager->UnbindFbo(FboType::FINAL);
+
+		// Color filter post-processing (applied BEFORE kernel filter)
+		// Applies grayscale, channel isolation, sepia, invert effects
+		if (m_rendering_flag & RenderingFlag::COLOR_FILTER)
+		{
+			DrawColorFilter();
+		}
+		else if (b_rendering_flag_dirty)
+		{
+			ClearColorFilter();
+		}
+
+		// Kernel-based image post-processing (Scene only, excludes Skybox & HUD)
+		// Note: Only GL_COLOR_BUFFER_BIT is cleared, Depth Buffer is preserved
+		if (m_rendering_flag & RenderingFlag::IMAGE_KERNEL)
+		{
+			DrawKernelPostProcess();
+		}
+		else if (b_rendering_flag_dirty)
+		{
+			ClearKernelPostProcess();
+		}
+
+		// Re-bind FINAL FBO to draw Skybox and HUD (after post-processing)
+		buffer_manager->BindFbo(FboType::FINAL);
+
+		// Skybox uses GL_LEQUAL depth test, draws only where depth == 1.0
 		if (m_rendering_flag & RenderingFlag::SKYBOX)
 			SkyboxDraw();
 
+		// HUD is composited with alpha blending (no depth test)
 		CompositeHUD();
+
 		buffer_manager->UnbindFbo(FboType::FINAL);
 
 	}
@@ -1277,6 +1308,164 @@ namespace RS_Graphics
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     buffer_manager->UnbindFbo(FboType::SSR);
+	}
+
+	void RSGraphics::DrawKernelPostProcess()
+	{
+    const auto rm = p_resource_manager;
+    const auto bm = rm->GetBufferManager();
+
+    // Update UBO if kernel data is dirty
+    if (m_kernel_data.is_dirty)
+    {
+      bm->UpdateKernelUBO(m_kernel_data.kernel, m_kernel_data.divisor, m_kernel_data.offset);
+      m_kernel_data.is_dirty = false;
+    }
+
+    // Get FBOs
+    const auto final_fbo = dynamic_cast<_RS_Internal::RSFinalFbo*>(bm->GetFboItem(FboType::FINAL));
+    const auto post_a_fbo = dynamic_cast<_RS_Internal::RSPostProcessFbo*>(bm->GetFboItem(FboType::POST_PROCESS_A));
+    const auto post_b_fbo = dynamic_cast<_RS_Internal::RSPostProcessFbo*>(bm->GetFboItem(FboType::POST_PROCESS_B));
+
+    // Clamp pass count to 1-4
+    const int pass_count = glm::clamp(m_kernel_data.pass_count, 1, 4);
+
+    rm->GetShaderManager()->Use(RSShaderNames::POST_KERNEL_FILTER);
+
+    // Disable depth test for full-screen quad rendering
+    glDisable(GL_DEPTH_TEST);
+
+    // Ping-pong rendering pattern:
+    // Pass 0: FINAL -> POST_A
+    // Pass 1: POST_A -> POST_B
+    // Pass 2: POST_B -> POST_A
+    // Pass 3: POST_A -> POST_B
+    // Final copy: last output -> FINAL
+
+    unsigned int input_texture = final_fbo->GetFinalTexture();
+    FboType last_output_fbo = FboType::POST_PROCESS_A;
+
+    for (int pass = 0; pass < pass_count; ++pass)
+    {
+      // Determine output FBO (alternate between A and B)
+      FboType output_fbo_type = (pass % 2 == 0) ? FboType::POST_PROCESS_A : FboType::POST_PROCESS_B;
+      last_output_fbo = output_fbo_type;
+
+      bm->BindFbo(output_fbo_type);
+      glClear(GL_COLOR_BUFFER_BIT);
+
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, input_texture);
+
+      bm->DrawQuad();
+
+      bm->UnbindFbo(output_fbo_type);
+
+      // Set input for next pass
+      input_texture = (pass % 2 == 0) ? post_a_fbo->GetColorTexture() : post_b_fbo->GetColorTexture();
+    }
+
+    // Final copy: POST_PROCESS -> FINAL (using simple texture copy shader)
+    rm->GetShaderManager()->Use(RSShaderNames::QUAD_TEXTURE);
+    bm->BindFbo(FboType::FINAL);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glActiveTexture(GL_TEXTURE0);
+    unsigned int final_input = (last_output_fbo == FboType::POST_PROCESS_A) 
+                               ? post_a_fbo->GetColorTexture() 
+                               : post_b_fbo->GetColorTexture();
+    glBindTexture(GL_TEXTURE_2D, final_input);
+
+    bm->DrawQuad();
+
+    bm->UnbindFbo(FboType::FINAL);
+
+    // Re-enable depth test
+    glEnable(GL_DEPTH_TEST);
+
+    rm->GetShaderManager()->UnbindShader();
+	}
+
+	void RSGraphics::ClearKernelPostProcess()
+	{
+    const auto buffer_manager = p_resource_manager->GetBufferManager();
+
+    // Clear POST_PROCESS_A
+    buffer_manager->BindFbo(FboType::POST_PROCESS_A);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    buffer_manager->UnbindFbo(FboType::POST_PROCESS_A);
+
+    // Clear POST_PROCESS_B
+    buffer_manager->BindFbo(FboType::POST_PROCESS_B);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    buffer_manager->UnbindFbo(FboType::POST_PROCESS_B);
+	}
+
+	void RSGraphics::DrawColorFilter()
+	{
+    const auto rm = p_resource_manager;
+    const auto bm = rm->GetBufferManager();
+
+    // Update UBO if color filter data is dirty
+    if (m_color_filter_data.is_dirty)
+    {
+      bm->UpdateColorFilterUBO(
+        static_cast<int>(m_color_filter_data.mode),
+        m_color_filter_data.weights,
+        m_color_filter_data.intensity
+      );
+      m_color_filter_data.is_dirty = false;
+    }
+
+    // Skip if mode is NONE
+    if (m_color_filter_data.mode == ColorFilterMode::NONE)
+      return;
+
+    // Get FBOs
+    const auto final_fbo = dynamic_cast<_RS_Internal::RSFinalFbo*>(bm->GetFboItem(FboType::FINAL));
+    const auto post_a_fbo = dynamic_cast<_RS_Internal::RSPostProcessFbo*>(bm->GetFboItem(FboType::POST_PROCESS_A));
+
+    rm->GetShaderManager()->Use(RSShaderNames::POST_COLOR_FILTER);
+
+    // Disable depth test for full-screen quad rendering
+    glDisable(GL_DEPTH_TEST);
+
+    // Single pass: FINAL -> POST_A -> FINAL
+    // Pass 1: Apply color filter to POST_A
+    bm->BindFbo(FboType::POST_PROCESS_A);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, final_fbo->GetFinalTexture());
+
+    bm->DrawQuad();
+
+    bm->UnbindFbo(FboType::POST_PROCESS_A);
+
+    // Pass 2: Copy back to FINAL
+    rm->GetShaderManager()->Use(RSShaderNames::QUAD_TEXTURE);
+    bm->BindFbo(FboType::FINAL);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, post_a_fbo->GetColorTexture());
+
+    bm->DrawQuad();
+
+    bm->UnbindFbo(FboType::FINAL);
+
+    // Re-enable depth test
+    glEnable(GL_DEPTH_TEST);
+
+    rm->GetShaderManager()->UnbindShader();
+	}
+
+	void RSGraphics::ClearColorFilter()
+	{
+    // Color filter uses same FBOs as kernel filter, no separate clearing needed
+    // The UBO state is managed by is_dirty flag
 	}
 
 } // namespace rs

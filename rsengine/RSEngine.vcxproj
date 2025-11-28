@@ -537,6 +537,7 @@ xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
     <ClCompile Include="src\Resource\Pipeline\FBO\RSFinalFbo.cpp" />
     <ClCompile Include="src\Resource\Pipeline\FBO\RSHudFbo.cpp" />
     <ClCompile Include="src\Resource\Pipeline\FBO\RSPickingFbo.cpp" />
+    <ClCompile Include="src\Resource\Pipeline\FBO\RSPostProcessFbo.cpp" />
     <ClCompile Include="src\Resource\Pipeline\FBO\RSShadowMapFbo.cpp" />
     <ClCompile Include="src\Resource\Pipeline\FBO\RSSkyboxFbo.cpp" />
     <ClCompile Include="src\Resource\Pipeline\FBO\RSSsaoBlurFbo.cpp" />
@@ -651,6 +652,7 @@ xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
     <ClInclude Include="src\Resource\Pipeline\FBO\RSFinalFbo.h" />
     <ClInclude Include="src\Resource\Pipeline\FBO\RSHudFbo.h" />
     <ClInclude Include="src\Resource\Pipeline\FBO\RSPickingFbo.h" />
+    <ClInclude Include="src\Resource\Pipeline\FBO\RSPostProcessFbo.h" />
     <ClInclude Include="src\Resource\Pipeline\FBO\RSShadowMapFbo.h" />
     <ClInclude Include="src\Resource\Pipeline\FBO\RSSkyboxFbo.h" />
     <ClInclude Include="src\Resource\Pipeline\FBO\RSSsaoBlurFbo.h" />

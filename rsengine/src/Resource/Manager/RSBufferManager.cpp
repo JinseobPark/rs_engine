@@ -29,6 +29,9 @@ namespace _RS_Internal
 		AllocateFboItems();
 		CreateFboItems(buffer_width, buffer_height);
 
+		CreateKernelUBO();
+		CreateColorFilterUBO();
+
 		InitializeConfiguration();
 	}
 
@@ -47,6 +50,8 @@ namespace _RS_Internal
 		ReleaseAllTextures();
 
 		ReleaseFboItems();
+		ReleaseKernelUBO();
+		ReleaseColorFilterUBO();
 	}
 	
 	void RSBufferManager::InitializeSkybox()
@@ -238,6 +243,8 @@ namespace _RS_Internal
     m_fbo_map[FboType::SSAO_BLUR] = new RSSsaoBlurFbo();
     m_fbo_map[FboType::SSR] = new RSSsrFbo();
     m_fbo_map[FboType::SSR_BLUR] = new RSSsrBlurFbo();
+    m_fbo_map[FboType::POST_PROCESS_A] = new RSPostProcessFbo();
+    m_fbo_map[FboType::POST_PROCESS_B] = new RSPostProcessFbo();
     m_fbo_map[FboType::FINAL] = new RSFinalFbo();
 	}
 
@@ -396,6 +403,108 @@ namespace _RS_Internal
     return dynamic_cast<RSSsrBlurFbo*>(m_fbo_map[FboType::SSR_BLUR])->GetSsrBlurTexture();
 	}
 
+	unsigned int RSBufferManager::GetPostProcessATexture()
+	{
+    return dynamic_cast<RSPostProcessFbo*>(m_fbo_map[FboType::POST_PROCESS_A])->GetColorTexture();
+	}
+
+	unsigned int RSBufferManager::GetPostProcessBTexture()
+	{
+    return dynamic_cast<RSPostProcessFbo*>(m_fbo_map[FboType::POST_PROCESS_B])->GetColorTexture();
+	}
+
+	void RSBufferManager::CreateKernelUBO()
+	{
+    // UBO layout (std140):
+    // float kernel[12] : 48 bytes (9 values + 3 padding for vec4 alignment)
+    // float divisor    : 4 bytes
+    // float offset     : 4 bytes
+    // float padding[2] : 8 bytes
+    // Total: 64 bytes
+
+    glGenBuffers(1, &m_kernel_ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_kernel_ubo);
+    glBufferData(GL_UNIFORM_BUFFER, 64, nullptr, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    // Bind to binding point 0
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_kernel_ubo);
+	}
+
+	void RSBufferManager::UpdateKernelUBO(const float* kernel, const float divisor, const float offset)
+	{
+    // UBO layout (std140) - 64 bytes total:
+    // vec4 kernel_row0 at offset 0   (kernel[0,1,2], padding)
+    // vec4 kernel_row1 at offset 16  (kernel[3,4,5], padding)
+    // vec4 kernel_row2 at offset 32  (kernel[6,7,8], padding)
+    // vec4 params at offset 48       (divisor, offset, padding, padding)
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_kernel_ubo);
+
+    // Upload kernel rows as vec4
+    float row0[4] = { kernel[0], kernel[1], kernel[2], 0.0f };
+    float row1[4] = { kernel[3], kernel[4], kernel[5], 0.0f };
+    float row2[4] = { kernel[6], kernel[7], kernel[8], 0.0f };
+    float params[4] = { divisor, offset, 0.0f, 0.0f };
+
+    glBufferSubData(GL_UNIFORM_BUFFER, 0,  16, row0);
+    glBufferSubData(GL_UNIFORM_BUFFER, 16, 16, row1);
+    glBufferSubData(GL_UNIFORM_BUFFER, 32, 16, row2);
+    glBufferSubData(GL_UNIFORM_BUFFER, 48, 16, params);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
+
+	void RSBufferManager::ReleaseKernelUBO()
+	{
+    if (m_kernel_ubo != 0)
+    {
+      glDeleteBuffers(1, &m_kernel_ubo);
+      m_kernel_ubo = 0;
+    }
+	}
+
+	void RSBufferManager::CreateColorFilterUBO()
+	{
+    // UBO layout (std140) - 32 bytes total:
+    // vec4 weights_intensity at offset 0  (weights.xyz, intensity)
+    // vec4 params at offset 16            (mode, padding, padding, padding)
+
+    glGenBuffers(1, &m_color_filter_ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_color_filter_ubo);
+    glBufferData(GL_UNIFORM_BUFFER, 32, nullptr, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    // Bind to binding point 1
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_color_filter_ubo);
+	}
+
+	void RSBufferManager::UpdateColorFilterUBO(int mode, const float* weights, float intensity)
+	{
+    // UBO layout (std140) - 32 bytes total:
+    // vec4 weights_intensity at offset 0  (weights[0,1,2], intensity)
+    // vec4 params at offset 16            (mode, padding, padding, padding)
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_color_filter_ubo);
+
+    float weights_intensity[4] = { weights[0], weights[1], weights[2], intensity };
+    float params[4] = { static_cast<float>(mode), 0.0f, 0.0f, 0.0f };
+
+    glBufferSubData(GL_UNIFORM_BUFFER, 0,  16, weights_intensity);
+    glBufferSubData(GL_UNIFORM_BUFFER, 16, 16, params);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
+
+	void RSBufferManager::ReleaseColorFilterUBO()
+	{
+    if (m_color_filter_ubo != 0)
+    {
+      glDeleteBuffers(1, &m_color_filter_ubo);
+      m_color_filter_ubo = 0;
+    }
+	}
+
 	void RSBufferManager::InitializeConfiguration()
 	{
 		RSResourceManager::GetInstance()->GetShaderManager()->Use(RSShaderNames::DEFAULT_OPAQUE);
@@ -501,6 +610,10 @@ namespace _RS_Internal
     RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::DEFERRED_POINT_SINGLE_UINT_VTK, "tex1", 1);
 		RSResourceManager::GetInstance()->GetShaderManager()->Use(RSShaderNames::DEFERRED_POINT_THREE_FLOAT_VTK);
     RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::DEFERRED_POINT_THREE_FLOAT_VTK, "tex0", 0);
+
+		// Post-process kernel filter
+		RSResourceManager::GetInstance()->GetShaderManager()->Use(RSShaderNames::POST_KERNEL_FILTER);
+		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::POST_KERNEL_FILTER, "input_texture", 0);
 
 
 

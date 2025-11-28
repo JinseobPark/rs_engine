@@ -18,6 +18,7 @@
 #include "RSSsaoBlurFbo.h"
 #include "RSSsrFbo.h"
 #include "RSSsrBlurFbo.h"
+#include "RSPostProcessFbo.h"
 
 /**
  * @brief Frame buffer object type enum list.
@@ -33,6 +34,8 @@ enum class FboType : std::uint16_t
   SSAO_BLUR,
   SSR,
   SSR_BLUR,
+  POST_PROCESS_A,  ///< Ping buffer for kernel post-processing
+  POST_PROCESS_B,  ///< Pong buffer for kernel post-processing
   FINAL
 };
 

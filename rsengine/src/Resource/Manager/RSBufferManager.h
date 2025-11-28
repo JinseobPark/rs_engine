@@ -266,6 +266,74 @@ public:
    */
   unsigned int GetSSRBlurTexture();
 
+  /**
+   * @brief Get Post-Process A texture buffer
+   * @return Post-process A texture buffer id (uint)
+   */
+  unsigned int GetPostProcessATexture();
+
+  /**
+   * @brief Get Post-Process B texture buffer
+   * @return Post-process B texture buffer id (uint)
+   */
+  unsigned int GetPostProcessBTexture();
+
+  // ********************************//
+  // ****** Kernel UBO Control ******//
+  // ********************************//
+
+  /**
+   * @brief Create kernel UBO for image post-processing
+   */
+  void CreateKernelUBO();
+
+  /**
+   * @brief Update kernel UBO data
+   * @param kernel 3x3 kernel array (9 floats)
+   * @param divisor Normalization divisor
+   * @param offset Color offset
+   */
+  void UpdateKernelUBO(const float* kernel, float divisor, float offset);
+
+  /**
+   * @brief Release kernel UBO
+   */
+  void ReleaseKernelUBO();
+
+  /**
+   * @brief Get kernel UBO id
+   * @return Kernel UBO id (uint)
+   */
+  unsigned int GetKernelUBO() const { return m_kernel_ubo; }
+
+  // **************************************//
+  // ****** Color Filter UBO Control ******//
+  // **************************************//
+
+  /**
+   * @brief Create color filter UBO for image post-processing
+   */
+  void CreateColorFilterUBO();
+
+  /**
+   * @brief Update color filter UBO data
+   * @param mode Filter mode (0-7)
+   * @param weights RGB weights/multipliers
+   * @param intensity Filter intensity (0-1)
+   */
+  void UpdateColorFilterUBO(int mode, const float* weights, float intensity);
+
+  /**
+   * @brief Release color filter UBO
+   */
+  void ReleaseColorFilterUBO();
+
+  /**
+   * @brief Get color filter UBO id
+   * @return Color filter UBO id (uint)
+   */
+  unsigned int GetColorFilterUBO() const { return m_color_filter_ubo; }
+
 	// *********************//
 	// ****** Skybox *******//
 	// *********************//
@@ -333,6 +401,9 @@ private:
   std::map<FboType, RSFBO*> m_fbo_map;	///< FBO map for FBO type
 
   SkyboxTheme skybox_theme = SkyboxTheme::DEFAULT;	///< Skybox theme
+
+  unsigned int m_kernel_ubo = 0;  ///< Kernel UBO for image post-processing
+  unsigned int m_color_filter_ubo = 0;  ///< Color filter UBO for image post-processing
 };
 } // namespace _RS_Internal
 

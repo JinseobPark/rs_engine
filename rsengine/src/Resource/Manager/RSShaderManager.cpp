@@ -97,6 +97,14 @@ namespace RS_Shader
     const auto deferred_ssr_blur = new RSShader(DeferredQuad_vs, DeferredScreenSpaceReflectionBlur_fs, false);
     shaders_map_[RSShaderNames::DEFERRED_SCREEN_SPACE_REFLECTION_BLUR] = deferred_ssr_blur;
 
+    // Kernel-based image post-processing shader
+    const auto post_kernel_filter = new RSShader(DeferredQuad_vs, PostKernelFilter_fs, false);
+    shaders_map_[RSShaderNames::POST_KERNEL_FILTER] = post_kernel_filter;
+
+    // Color filter post-processing shader (grayscale, channels, sepia, etc.)
+    const auto post_color_filter = new RSShader(DeferredQuad_vs, PostColorFilter_fs, false);
+    shaders_map_[RSShaderNames::POST_COLOR_FILTER] = post_color_filter;
+
 
 
 		// Compute Shaders
