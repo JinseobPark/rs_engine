@@ -36,6 +36,7 @@ SeobJJangGames.exe
     └── RSEngine.lib (Static Library)
         ├── OpenGL (glfw3_mt.lib, glew32s.lib)
         ├── FreeType (freetype.lib)
+        ├── OpenCV (opencv_world412.lib)
         └── External Dependencies
 ```
 
@@ -73,6 +74,7 @@ SeobJJangGames.exe
 | **FreeType** | 폰트 렌더링 | `rs_engine_library/extern/image/freetype/` |
 | **ImGui** | UI 라이브러리 | `RSEngine/extern/imgui/` |
 | **STB Image** | 이미지 로딩 | `rs_engine_library/extern/image/` |
+| **OpenCV** | 컴퓨터 비전 | `rs_engine_library/extern/opencv/` |
 
 **중요**: 모든 라이브러리는 이미 `rs_engine_library/` 폴더에 포함되어 있습니다.
 

@@ -1,3 +1,5 @@
-# SPH_MINT
+# SeobJJangGames
 
-We Luv Mint!!!!
+**Game Development Project Based on Rock & Stone Engine**
+
+Lets go SeobJJangGames!

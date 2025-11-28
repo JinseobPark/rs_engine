@@ -1,6 +1,6 @@
 # RSEngine + SeobJJangGames Project
 
-![RSEngine Logo](RSEngine/doxy_scripts/logo.jpg)
+![RSEngine Logo](rsengine/doxy_scripts/logo.jpg)
 
 **Game Development Project Based on Rock & Stone Engine**
 
@@ -332,6 +332,7 @@ After build completion, executable locations:
 
 ### Image Processing
 - **STB Image**: Lightweight image loader
+- **OpenCV**: Computer vision library
 
 ### Development Tools
 - **Visual Studio 2022**: Primary IDE
@@ -508,6 +509,7 @@ RS_ERROR("Error");      // Error
 ### Technical Documentation
 - [OpenGL Documentation](https://www.opengl.org/documentation/)
 - [GLFW Documentation](https://www.glfw.org/documentation.html)
+- [OpenCV Documentation](https://docs.opencv.org/4.12.0/)
 - [ImGui Documentation](https://github.com/ocornut/imgui)
 
 ### SPH Simulation
@@ -515,8 +517,7 @@ RS_ERROR("Error");      // Error
 - Fluid dynamics simulation techniques
 
 ### Project Resources
-- **Repository**: GitHub - particle_master
-- **Branch**: refactor/revive
+- **Repository**: GitHub - rs_engine
 - **Owner**: JinseobPark
 
 ---
@@ -525,7 +526,7 @@ RS_ERROR("Error");      // Error
 
 **Jinseob Park (WhatSseob)**
 - GitHub: [@JinseobPark](https://github.com/JinseobPark)
-- Repository: [particle_master](https://github.com/JinseobPark/particle_master)
+- Repository: [rs_engine](https://github.com/JinseobPark/rs_engine)
 
 ---
 
@@ -860,6 +861,7 @@ msbuild rsengine_playground/SPH_MINT.sln /p:Configuration=Debug /p:Platform=x64 
 
 ### 이미지 처리
 - **STB Image**: 경량 이미지 로더
+- **OpenCV**: 컴퓨터 비전 라이브러리
 
 ### 개발 도구
 - **Visual Studio 2022**: 주 IDE
@@ -1036,6 +1038,7 @@ RS_ERROR("오류");      // 오류
 ### 기술 문서
 - [OpenGL Documentation](https://www.opengl.org/documentation/)
 - [GLFW Documentation](https://www.glfw.org/documentation.html)
+- [OpenCV Documentation](https://docs.opencv.org/4.12.0/)
 - [ImGui Documentation](https://github.com/ocornut/imgui)
 
 ### SPH 시뮬레이션
@@ -1043,8 +1046,7 @@ RS_ERROR("오류");      // 오류
 - 유체 역학 시뮬레이션 기술
 
 ### 프로젝트 리소스
-- **저장소**: GitHub - particle_master
-- **브랜치**: refactor/revive
+- **저장소**: GitHub - rs_engine
 - **소유자**: JinseobPark
 
 ---
@@ -1053,7 +1055,7 @@ RS_ERROR("오류");      // 오류
 
 **Jinseob Park (WhatSseob)**
 - GitHub: [@JinseobPark](https://github.com/JinseobPark)
-- Repository: [particle_master](https://github.com/JinseobPark/particle_master)
+- Repository: [rs_engine](https://github.com/JinseobPark/rs_engine)
 
 ---
 

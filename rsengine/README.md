@@ -378,7 +378,7 @@ GLSL shaders are automatically converted to C++ headers:
 ```python
 # merge_shaders.py
 # Scans .vert, .frag, .comp files
-# ¡æ Generates RSMergedShaders.h/cpp
+# ï¿½ï¿½ Generates RSMergedShaders.h/cpp
 
 const char* shader_name_vs = R"(
  #version 430 core
@@ -453,7 +453,6 @@ void RSResourceManager::Resize(int width, int height)
 ## Related Projects
 
 - **SeobJJangGames**: Game layer built on RSEngine
-- **SPH_MINT**: Research project for fluid simulation
 
 ---
 
