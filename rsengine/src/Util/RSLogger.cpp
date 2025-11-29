@@ -5,7 +5,7 @@
 //
 // USE1 with function log
 //
-    RSLogger time_loger(LOG_LEVEL_INFO);
+    RSLogger time_loger(RS_LOG_LEVEL_INFO);
     time_loger.Ninfo("HI THERE");
 
 //
@@ -17,7 +17,7 @@
 //
 // USE1 without function log
 //
-    RSLogger time_loger(LOG_LEVEL_INFO);
+    RSLogger time_loger(RS_LOG_LEVEL_INFO);
     time_loger.Nmessenger("HI THERE");
 
 //
@@ -33,7 +33,7 @@ namespace RS_Logger
     {
       assert(mLOGGER == nullptr && "Only One Logger");
       mLOGGER = this;
-      this->log_level_ = LOG_LEVEL_DEBUG;
+      this->log_level_ = RS_LOG_LEVEL_DEBUG;
     }
     RSLogger::RSLogger(const int level)
     {
@@ -58,10 +58,10 @@ namespace RS_Logger
         char level[10];
         switch (lv)
         {
-        case(LOG_LEVEL_FATAL): strcpy(level, "[FATAL]"); break;
-        case(LOG_LEVEL_WARN): strcpy(level, "[WARN] "); break;
-        case(LOG_LEVEL_INFO): strcpy(level, "[INFO] "); break;
-        case(LOG_LEVEL_DEBUG): strcpy(level, "[DEBUG]"); break;
+        case(RS_LOG_LEVEL_FATAL): strcpy(level, "[FATAL]"); break;
+        case(RS_LOG_LEVEL_WARN): strcpy(level, "[WARN] "); break;
+        case(RS_LOG_LEVEL_INFO): strcpy(level, "[INFO] "); break;
+        case(RS_LOG_LEVEL_DEBUG): strcpy(level, "[DEBUG]"); break;
         default: 
             break;
         }
@@ -135,10 +135,10 @@ namespace RS_Logger
         char level[10];
         switch (lv)
         {
-        case(LOG_LEVEL_FATAL): strcpy(level, "[FATAL]"); break;
-        case(LOG_LEVEL_WARN): strcpy(level, "[WARN] "); break;
-        case(LOG_LEVEL_INFO): strcpy(level, "[INFO] "); break;
-        case(LOG_LEVEL_DEBUG): strcpy(level, "[DEBUG]"); break;
+        case(RS_LOG_LEVEL_FATAL): strcpy(level, "[FATAL]"); break;
+        case(RS_LOG_LEVEL_WARN): strcpy(level, "[WARN] "); break;
+        case(RS_LOG_LEVEL_INFO): strcpy(level, "[INFO] "); break;
+        case(RS_LOG_LEVEL_DEBUG): strcpy(level, "[DEBUG]"); break;
 		default:
 			break;
         }
@@ -179,10 +179,10 @@ namespace RS_Logger
         char level[10];
         switch (lv)
         {
-        case(LOG_LEVEL_FATAL): strcpy(level, "[FATAL]"); break;
-        case(LOG_LEVEL_WARN): strcpy(level, "[WARN] "); break;
-        case(LOG_LEVEL_INFO): strcpy(level, "[INFO] "); break;
-        case(LOG_LEVEL_DEBUG): strcpy(level, "[DEBUG]"); break;
+        case(RS_LOG_LEVEL_FATAL): strcpy(level, "[FATAL]"); break;
+        case(RS_LOG_LEVEL_WARN): strcpy(level, "[WARN] "); break;
+        case(RS_LOG_LEVEL_INFO): strcpy(level, "[INFO] "); break;
+        case(RS_LOG_LEVEL_DEBUG): strcpy(level, "[DEBUG]"); break;
         default:
           strcpy(level, "[NONE]");
             break;
@@ -221,10 +221,10 @@ namespace RS_Logger
       char level[10];
       switch (lv)
       {
-      case(LOG_LEVEL_FATAL): strcpy(level, "[FATAL]"); break;
-      case(LOG_LEVEL_WARN): strcpy(level, "[WARN] "); break;
-      case(LOG_LEVEL_INFO): strcpy(level, "[INFO] "); break;
-      case(LOG_LEVEL_DEBUG): strcpy(level, "[DEBUG]"); break;
+      case(RS_LOG_LEVEL_FATAL): strcpy(level, "[FATAL]"); break;
+      case(RS_LOG_LEVEL_WARN): strcpy(level, "[WARN] "); break;
+      case(RS_LOG_LEVEL_INFO): strcpy(level, "[INFO] "); break;
+      case(RS_LOG_LEVEL_DEBUG): strcpy(level, "[DEBUG]"); break;
       default:
         break;
       }

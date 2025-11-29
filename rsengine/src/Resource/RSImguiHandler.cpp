@@ -41,8 +41,6 @@ namespace RS_Handler
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.WantCaptureMouse = true;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
-    //ImFont* test_font = io.Fonts->AddFontFromFileTTF("resources/Font/E8Font.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesDefault());
-    //m_font = io.Fonts->AddFontFromFileTTF("resources/Font/E8Font.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesKorean());
 	// Get Korean Font from windows system
 	m_font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesKorean());
 

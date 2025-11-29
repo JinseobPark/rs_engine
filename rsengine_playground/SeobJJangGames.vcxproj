@@ -127,7 +127,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)..\rs_engine_library\lib;$(SolutionDir)..\rs_engine_library\rs_engine\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RSEngineD.lib;opengl32.lib;glfw3_mt.lib;glew32s.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RSEngineD.lib;opengl32.lib;glfw3_mt.lib;glew32s.lib;freetype.lib;opencv_world4120d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /E /I /Y "$(SolutionDir)resources" "$(SolutionDir)OutputFiles\$(Configuration)\resources"</Command>
@@ -153,7 +153,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)..\rs_engine_library\lib;$(SolutionDir)..\rs_engine_library\rs_engine\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RSEngine.lib;opengl32.lib;glfw3_mt.lib;glew32s.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>RSEngine.lib;opengl32.lib;glfw3_mt.lib;glew32s.lib;freetype.lib;opencv_world4120.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /E /I /Y "$(SolutionDir)resources" "$(SolutionDir)OutputFiles\$(Configuration)\resources"</Command>
@@ -163,9 +163,9 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="src\CommonLogic.cpp" />
     <ClCompile Include="src\GameData.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="src\LevelData\JordyRollData.cpp" />
     <ClCompile Include="src\LevelData\ParticleSimulatorData.cpp" />
     <ClCompile Include="src\LevelData\PointClipperData.cpp" />

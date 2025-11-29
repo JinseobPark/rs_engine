@@ -1,21 +1,21 @@
 #ifndef RS_LOGGER_DEFINE_H_
 #define RS_LOGGER_DEFINE_H_
 
-#define LOG_LEVEL_OFF 0
-#define LOG_LEVEL_FATAL 10
-#define LOG_LEVEL_WARN 20
-#define LOG_LEVEL_DEBUG 30
-#define LOG_LEVEL_INFO 40
-#define LOG_LEVEL_ALL 100
+#define RS_LOG_LEVEL_OFF 0
+#define RS_LOG_LEVEL_FATAL 10
+#define RS_LOG_LEVEL_WARN 20
+#define RS_LOG_LEVEL_DEBUG 30
+#define RS_LOG_LEVEL_INFO 40
+#define RS_LOG_LEVEL_ALL 100
 #define __LOG_FILE__ "../RSEngine_report.log"
 
-#define RSfatal(str, ...) FatalLog(__FUNCTION__, __LINE__, LOG_LEVEL_FATAL, str, ##__VA_ARGS__)
-#define RSwarn(str, ...) WriteLog(__FUNCTION__, __LINE__, LOG_LEVEL_WARN, str, ##__VA_ARGS__)
-#define RSdebug(str, ...) PrintLog(__FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, str, ##__VA_ARGS__)
-#define RSprint(str, ...) PrintLog(__FUNCTION__, __LINE__, LOG_LEVEL_OFF, str, ##__VA_ARGS__)
-#define RSinfo(str, ...) WriteLog(__FUNCTION__  , __LINE__, LOG_LEVEL_INFO, str, ##__VA_ARGS__)
+#define RSfatal(str, ...) FatalLog(__FUNCTION__, __LINE__, RS_LOG_LEVEL_FATAL, str, ##__VA_ARGS__)
+#define RSwarn(str, ...) WriteLog(__FUNCTION__, __LINE__, RS_LOG_LEVEL_WARN, str, ##__VA_ARGS__)
+#define RSdebug(str, ...) PrintLog(__FUNCTION__, __LINE__, RS_LOG_LEVEL_DEBUG, str, ##__VA_ARGS__)
+#define RSprint(str, ...) PrintLog(__FUNCTION__, __LINE__, RS_LOG_LEVEL_OFF, str, ##__VA_ARGS__)
+#define RSinfo(str, ...) WriteLog(__FUNCTION__  , __LINE__, RS_LOG_LEVEL_INFO, str, ##__VA_ARGS__)
 
-#define RSmessenger(str, ...) WriteMessageLog(LOG_LEVEL_INFO, str, ##__VA_ARGS__)
+#define RSmessenger(str, ...) WriteMessageLog(RS_LOG_LEVEL_INFO, str, ##__VA_ARGS__)
 
 
 #define RS_FATAL RS_Logger::mLOGGER->RSfatal

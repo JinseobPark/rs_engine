@@ -6882,7 +6882,7 @@ void main()
     }
     else if (mode == 5) // Sepia
     {
-        float gray = dot(color, vec3(0.299, 0.587, 0.114));
+        float gray = dot(color, vec3(0.299, 0.587, 0.114)); // Luminosity method
         result = vec3(gray * weights.x, gray * weights.y, gray * weights.z);
     }
     else if (mode == 6) // Invert
@@ -6891,7 +6891,7 @@ void main()
     }
     else if (mode == 7) // Custom - use weights as multipliers
     {
-        float gray = dot(color, vec3(0.299, 0.587, 0.114));
+        float gray = dot(color, vec3(0.299, 0.587, 0.114)); // Luminosity method
         result = vec3(gray) * weights;
     }
     
