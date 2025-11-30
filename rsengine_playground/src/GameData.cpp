@@ -45,6 +45,11 @@ namespace SJG
 			RS_State::mRSSTATE->SetNextState(static_cast<unsigned int>(GameStateID::SRG_POINT_CLIPPER));
 		}
 
+		if (RS_Input::mRSINPUT->IsTriggered(RS_Input::mRSKEYBIND->GetKey(RSKeyList::PLAY_GAME_5)))
+		{
+			RS_State::mRSSTATE->SetNextState(static_cast<unsigned int>(GameStateID::SRG_CLOTH_SIMULATOR));
+		}
+
 		if (RS_Input::mRSINPUT->IsTriggered(RS_Input::mRSKEYBIND->GetKey(RSKeyList::PLAY_RESET)))
 		{
 			RS_State::mRSSTATE->Restart();

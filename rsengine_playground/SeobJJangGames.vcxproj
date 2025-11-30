@@ -170,6 +170,7 @@
     <ClCompile Include="src\LevelData\ParticleSimulatorData.cpp" />
     <ClCompile Include="src\LevelData\PointClipperData.cpp" />
     <ClCompile Include="src\LevelData\VTKLoaderData.cpp" />
+    <ClCompile Include="src\Level\ClothSimulatorLevel.cpp" />
     <ClCompile Include="src\Level\ParticleSimulatorLevel.cpp" />
     <ClCompile Include="src\Level\PointClipperLevel.cpp" />
     <ClCompile Include="src\Level\VTKLoaderLevel.cpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="src\LevelData\ParticleSimulatorData.h" />
     <ClInclude Include="src\LevelData\VTKLoaderData.h" />
     <ClInclude Include="src\LevelData\PointClipperData.h" />
+    <ClInclude Include="src\Level\ClothSimulatorLevel.h" />
     <ClInclude Include="src\Level\ParticleSimulatorLevel.h" />
     <ClInclude Include="src\CommonLogic.h" />
     <ClInclude Include="src\GameStateManager.h" />

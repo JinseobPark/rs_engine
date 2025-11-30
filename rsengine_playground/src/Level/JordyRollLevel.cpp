@@ -22,7 +22,7 @@ namespace SJG
 	void JordyInitialize()
 	{
 		m_jordy_roll_data->Initialize();
-    m_jordy_roll_widget->Initialize();
+		m_jordy_roll_widget->Initialize();
 	}
 
 	void JordyUpdate(const float dt)
