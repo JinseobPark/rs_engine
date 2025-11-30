@@ -317,7 +317,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;freetype.lib;fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;freetype.lib;fmodL_vc.lib;opencv_world4120d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
       <AdditionalOptions>/Ylsymbol %(AdditionalOptions)</AdditionalOptions>
     </Link>
@@ -406,7 +406,7 @@ xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;freetype.lib;fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32.lib;freetype.lib;fmod_vc.lib;opencv_world4120.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetName).lib" "$(ProjectDir)..\rs_engine_library\rs_engine\lib"
@@ -521,6 +521,8 @@ xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_DLL_CY|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Resource\Manager\RSMaterialManager.cpp" />
+    <ClCompile Include="src\Resource\Manager\RSVisionManager.cpp" />
+    <ClCompile Include="src\Resource\Object\Camera\RSPhysicalCamera.cpp" />
     <ClCompile Include="src\Resource\Object\Component\Material\RSMaterial.cpp" />
     <ClCompile Include="src\Resource\Object\Component\RSTransform.cpp" />
     <ClCompile Include="src\Resource\Particle\PointClipper\RSPointClipper.cpp" />
@@ -546,6 +548,8 @@ xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
     <ClCompile Include="src\Resource\Pipeline\FBO\RSSsrBlurFbo.cpp" />
     <ClCompile Include="src\Resource\Pipeline\FBO\RSSsrFbo.cpp" />
     <ClCompile Include="src\Resource\Pipeline\RSMergedShaders.cpp" />
+    <ClCompile Include="src\Resource\Vision\RSImageProcessor.cpp" />
+    <ClCompile Include="src\Resource\Vision\RSSurroundView.cpp" />
     <ClCompile Include="src\Resource\Widget\RSTextButtonWidget.cpp" />
     <ClCompile Include="src\RSEngine.cpp" />
     <ClCompile Include="src\Resource\IO\RSOBJIO.cpp" />
@@ -622,10 +626,12 @@ xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
     <ClInclude Include="src\Resource\Manager\RSMaterialManager.h" />
     <ClInclude Include="src\Resource\Manager\RSParticleManager.h" />
     <ClInclude Include="src\Resource\Manager\RSPipelineManager.h" />
+    <ClInclude Include="src\Resource\Manager\RSVisionManager.h" />
     <ClInclude Include="src\Resource\Manager\RSWidgetManager.h" />
     <ClInclude Include="src\Resource\Object\Camera\RSCameraBase.h" />
     <ClInclude Include="src\Resource\Object\Camera\RSCamera.h" />
     <ClInclude Include="src\Resource\Object\Camera\CameraV2.h" />
+    <ClInclude Include="src\Resource\Object\Camera\RSPhysicalCamera.h" />
     <ClInclude Include="src\Resource\Object\Component\Material\RSMaterial.h" />
     <ClInclude Include="src\Resource\Object\Component\RSComponent.h" />
     <ClInclude Include="src\Resource\Object\Component\RSComponentHeader.h" />
@@ -662,6 +668,9 @@ xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
     <ClInclude Include="src\Resource\Pipeline\FBO\RSSsrFbo.h" />
     <ClInclude Include="src\Resource\Pipeline\RSMergedShaders.h" />
     <ClInclude Include="src\Define\RSGizmoMeshData.h" />
+    <ClInclude Include="src\Resource\Vision\RSImageProcessor.h" />
+    <ClInclude Include="src\Resource\Vision\RSSurroundView.h" />
+    <ClInclude Include="src\Resource\Vision\RSVisionHeader.h" />
     <ClInclude Include="src\Resource\Widget\Legend\RSLegendWidget.h" />
     <ClInclude Include="src\Resource\Widget\RSMeshWidget.h" />
     <ClInclude Include="src\Resource\Widget\RSButtonWidget.h" />
