@@ -174,28 +174,28 @@
     <ClCompile Include="src\Resource\Object\Component\RSTransform.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resource\Particle\Solvers\RSSStaticBruteForce.cpp">
+    <ClCompile Include="src\Resource\Particle\Solvers\SPH\RSSStaticBruteForce.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resource\Particle\Solvers\RSSStaticGrid.cpp">
+    <ClCompile Include="src\Resource\Particle\Solvers\SPH\RSSStaticGrid.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resource\Particle\Solvers\RSSNone.cpp">
+    <ClCompile Include="src\Resource\Particle\Solvers\SPH\RSSNone.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resource\Particle\Solvers\RSSJustParticle.cpp">
+    <ClCompile Include="src\Resource\Particle\Solvers\SPH\RSSJustParticle.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resource\Particle\Solvers\RSSDynamicBruteForce.cpp">
+    <ClCompile Include="src\Resource\Particle\Solvers\SPH\RSSDynamicBruteForce.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resource\Particle\Solvers\RSSCommon.cpp">
+    <ClCompile Include="src\Resource\Particle\Solvers\SPH\RSSCommon.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resource\Particle\Solvers\RSSDynamicCommon.cpp">
+    <ClCompile Include="src\Resource\Particle\Solvers\SPH\RSSDynamicCommon.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="src\Resource\Particle\Solvers\RSSStaticCommon.cpp">
+    <ClCompile Include="src\Resource\Particle\Solvers\SPH\RSSStaticCommon.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="src\Resource\Particle\VTKViewer\RSVTKViewer.cpp">

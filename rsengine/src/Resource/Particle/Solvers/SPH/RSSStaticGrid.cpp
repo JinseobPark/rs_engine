@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "../RSParticleSimulator.h"
+#include "../../RSParticleSimulator.h"
 
 #include "Resource/Manager/RSResourceManager.h"
 #include "Util/RSUtilFunctions.h"
