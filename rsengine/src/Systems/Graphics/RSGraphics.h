@@ -256,6 +256,18 @@ namespace RS_Graphics
 		void DrawParticleSimulatorPointToGBuffer();
 
     /**
+     * @brief Draw Cloth Mesh to GBuffer.
+     * Renders cloth simulation as triangle mesh with GL_FILL mode.
+		 */
+		void DrawClothToGBuffer();
+
+    /**
+     * @brief Forward draw Cloth Mesh.
+     * Renders cloth simulation as triangle mesh with GL_FILL mode.
+		 */
+		void ForwardDrawCloth();
+
+    /**
      * @brief Composite GBuffer.
 		 */
 		void CompositeGBuffer();

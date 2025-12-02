@@ -62,11 +62,9 @@ namespace RS_Particle
 
 	void RSParticleManager::DeferredDraw()
 	{
+		// SPH Particle Rendering (Point rendering)
 		if (b_use_sph && m_particle_simulator)
 			m_particle_simulator->DeferredDraw();
-
-		if (b_use_cloth && m_cloth_simulator)
-			m_cloth_simulator->DeferredDraw();
 
 		if (m_point_clipper)
 			m_point_clipper->Draw();
@@ -77,17 +75,29 @@ namespace RS_Particle
 
 	void RSParticleManager::ForwardDraw()
 	{
+		// SPH Particle Rendering (Point rendering)
 		if (b_use_sph && m_particle_simulator)
 			m_particle_simulator->ForwardDraw();
-
-		if (b_use_cloth && m_cloth_simulator)
-			m_cloth_simulator->ForwardDraw();
 
 		if (m_point_clipper)
 			m_point_clipper->Draw();
 
 		if (m_vtk_viewer)
 			m_vtk_viewer->Draw(RSDataRenderType::FORWARD);
+	}
+
+	void RSParticleManager::DeferredDrawCloth()
+	{
+		// Cloth Mesh Rendering (Triangle mesh - GL_FILL mode)
+		if (b_use_cloth && m_cloth_simulator)
+			m_cloth_simulator->DeferredDraw();
+	}
+
+	void RSParticleManager::ForwardDrawCloth()
+	{
+		// Cloth Mesh Rendering (Triangle mesh - GL_FILL mode)
+		if (b_use_cloth && m_cloth_simulator)
+			m_cloth_simulator->ForwardDraw();
 	}
 
 	void RSParticleManager::CreateParticleSystem(const std::string& name_)

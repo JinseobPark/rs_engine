@@ -25,7 +25,7 @@ namespace RS_Graphics
 		glEnable(GL_POINT_SPRITE);
 
 		// m_rendering_flag includes shadow and deferred rendering and SSAO
-    m_rendering_flag = RenderingFlag::SHADOW | RenderingFlag::OPAQUE_DEFERRED | RenderingFlag::SSAO | RenderingFlag::SSR;
+    	m_rendering_flag = RenderingFlag::SHADOW | RenderingFlag::OPAQUE_DEFERRED | RenderingFlag::SSAO | RenderingFlag::SSR ;
 	}
 
 	void RSGraphics::PostInitialize()
@@ -737,6 +737,8 @@ namespace RS_Graphics
 		// Draw Opaque to G Buffer
 		DrawOpaqueToGBuffer();
 
+		DrawClothToGBuffer();
+
 		if (m_rendering_flag & RenderingFlag::FLUID_DEFERRED)
 		{
 		  // Draw Particle Simulator Point to G Buffer
@@ -811,6 +813,8 @@ namespace RS_Graphics
 
 		PointDrawForward();
 
+		ForwardDrawCloth();
+
 		TransparentDrawPbr();
 
 		DrawPickedObject();
@@ -871,6 +875,9 @@ namespace RS_Graphics
 		if (m_rendering_flag & RenderingFlag::FLUID_DEFERRED)
 			DrawParticleSimulatorPointToGBuffer();
 
+		if (m_rendering_flag & RenderingFlag::CLOTH_DEFERRED)
+			DrawClothToGBuffer();
+
 		// Unbind G Buffer
 		buffer_manager->UnbindFbo(FboType::DEFERRED);
 
@@ -906,6 +913,8 @@ namespace RS_Graphics
 		if (!(m_rendering_flag & RenderingFlag::OPAQUE_DEFERRED))
 			OpaqueDrawPbr();
 
+		if(!(m_rendering_flag & RenderingFlag::CLOTH_DEFERRED))
+			ForwardDrawCloth();
 
 		LineDraw();
 
@@ -1041,7 +1050,7 @@ namespace RS_Graphics
 	}
 	void RSGraphics::DrawParticleSimulatorPointToGBuffer()
 	{
-		// Point Draw
+		// Point Draw - SPH Particles only
 		glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
 		// Particle Rendering
 		p_resource_manager->GetParticleManager()->DeferredDraw();
@@ -1049,6 +1058,27 @@ namespace RS_Graphics
 
 		p_resource_manager->GetShaderManager()->UnbindShader();
 	}
+
+	void RSGraphics::DrawClothToGBuffer()
+	{
+		// Triangle Fill mode for cloth surface mesh
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		// Cloth Mesh Rendering
+		p_resource_manager->GetParticleManager()->DeferredDrawCloth();
+
+		p_resource_manager->GetShaderManager()->UnbindShader();
+	}
+
+	void RSGraphics::ForwardDrawCloth()
+	{
+		// Triangle Fill mode for cloth surface mesh
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		// Cloth Mesh Forward Rendering
+		p_resource_manager->GetParticleManager()->ForwardDrawCloth();
+
+		p_resource_manager->GetShaderManager()->UnbindShader();
+	}
+
 	void RSGraphics::CompositeGBuffer()
 	{
 		const auto rm = p_resource_manager;

@@ -282,6 +282,7 @@ enum class RenderingFlag : uint32_t
   SSR = 1 << 5,
   IMAGE_KERNEL = 1 << 6,   ///< Kernel-based image post-processing
   COLOR_FILTER = 1 << 7,   ///< Color filter post-processing (grayscale, channels, etc.)
+  CLOTH_DEFERRED = 1 << 8, ///< Cloth simulation deferred rendering
 };
 
 static bool operator&(RenderingFlag lhs, RenderingFlag rhs)

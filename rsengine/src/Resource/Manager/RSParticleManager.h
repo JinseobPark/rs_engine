@@ -51,6 +51,18 @@ public:
 
   void ForwardDraw();
 
+  /**
+   * @brief Draw cloth mesh to GBuffer (Deferred rendering)
+   * Uses GL_FILL polygon mode for triangle mesh rendering
+   */
+  void DeferredDrawCloth();
+
+  /**
+   * @brief Draw cloth mesh (Forward rendering)
+   * Uses GL_FILL polygon mode for triangle mesh rendering
+   */
+  void ForwardDrawCloth();
+
 	/**
 	* @brief Create particle system with names
 	* @param[in] name_ particle system name

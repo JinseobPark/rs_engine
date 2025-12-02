@@ -62,6 +62,8 @@ enum class RSShaderNames : std::uint8_t
   DEFERRED_SCREEN_SPACE_REFLECTION_BLUR,
   POST_COLOR_FILTER,   ///< Color filter post-processing shader (grayscale, channels, etc.)
   POST_KERNEL_FILTER,  ///< Kernel-based image post-processing shader
+  CLOTH_RENDER,        ///< Cloth simulation forward rendering shader
+  DEFERRED_CLOTH_RENDER, ///< Cloth simulation deferred rendering shader
 	SHADER_COUNT
 };
 

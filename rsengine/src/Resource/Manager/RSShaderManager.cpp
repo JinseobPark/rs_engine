@@ -105,7 +105,13 @@ namespace RS_Shader
     const auto post_color_filter = new RSShader(DeferredQuad_vs, PostColorFilter_fs, false);
     shaders_map_[RSShaderNames::POST_COLOR_FILTER] = post_color_filter;
 
+    // Cloth Render shader (Forward)
+    const auto cloth_render = new RSShader(ClothRender_vs, ClothRender_fs, false);
+    shaders_map_[RSShaderNames::CLOTH_RENDER] = cloth_render;
 
+    // Cloth Render shader (Deferred) - uses same shaders for now, outputs to G-Buffer
+    const auto deferred_cloth_render = new RSShader(ClothRender_vs, ClothRender_fs, false);
+    shaders_map_[RSShaderNames::DEFERRED_CLOTH_RENDER] = deferred_cloth_render;
 
 		// Compute Shaders
 		//const auto gravity_compute_shader = new ComputeShader("resources\\GLSL\\ComputeParticles.comp");

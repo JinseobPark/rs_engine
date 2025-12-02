@@ -19,7 +19,15 @@ namespace SJG
     void ClothSimulatorInitialize()
     {
         m_cloth_simulator_data->Initialize();
+        
+        // Enable cloth rendering in ParticleManager
+        m_resource_manager->GetParticleManager()->SetUseCloth(true);
+        
+        // Initialize cloth simulator
         m_cloth_simulator->Initialize();
+        
+        // Start simulation automatically (or user can start via ImGui)
+        // m_cloth_simulator->StartSimulation();
 
     }
 
@@ -36,6 +44,7 @@ namespace SJG
     {
         m_cloth_simulator_data->Shutdown();
         m_cloth_simulator->Shutdown();
+        m_resource_manager->GetParticleManager()->SetUseCloth(false);
     }
     void ClothSimulatorUnload()
     {

@@ -110,8 +110,39 @@ namespace RS_Cloth
 		if (!m_initialized)
 			return;
 
-		// TODO: Implement forward rendering
-		// Use cloth render shader with position and normal SSBOs
+		// Use Cloth Render shader
+		auto shader_manager = RSResourceManager::GetInstance()->GetShaderManager();
+		auto camera = RSResourceManager::GetInstance()->GetCamera();
+
+		shader_manager->Use(RS_PipelineList::RSShaderNames::CLOTH_RENDER);
+
+		// Set transformation matrices
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_model", glm::mat4(1.0f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_view", camera->GetView());
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_projection", camera->GetProj());
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "cloth_width", m_cloth_width);
+
+		// Set material properties
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_cloth_color", glm::vec3(0.8f, 0.2f, 0.2f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_roughness", 0.5f);
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_metallic", 0.0f);
+
+		// Set lighting
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_light_pos", glm::vec3(10.0f, 20.0f, 10.0f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_light_color", glm::vec3(1.0f, 1.0f, 1.0f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_view_pos", camera->GetPosition());
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_ambient_strength", 0.3f);
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_use_texture", false);
+
+		// Bind SSBOs for vertex shader
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_POSITION_BINDING, m_position_ssbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_NORMAL_BINDING, m_normal_ssbo);
+
+		// Draw cloth mesh
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+		glDrawElements(GL_TRIANGLES, m_triangle_count * 3, GL_UNSIGNED_INT, nullptr);
+		glBindVertexArray(0);
 	}
 
 	void RSClothSimulator::DeferredDraw()
@@ -119,8 +150,39 @@ namespace RS_Cloth
 		if (!m_initialized)
 			return;
 
-		// TODO: Implement deferred rendering
-		// Output to G-Buffer
+		// Use Deferred Cloth Render shader
+		auto shader_manager = RSResourceManager::GetInstance()->GetShaderManager();
+		auto camera = RSResourceManager::GetInstance()->GetCamera();
+
+		shader_manager->Use(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER);
+
+		// Set transformation matrices
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_model", glm::mat4(1.0f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_view", camera->GetView());
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_projection", camera->GetProj());
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "cloth_width", m_cloth_width);
+
+		// Set material properties
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_cloth_color", glm::vec3(0.8f, 0.2f, 0.2f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_roughness", 0.5f);
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_metallic", 0.0f);
+
+		// Set lighting (for G-Buffer, minimal lighting info needed)
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_light_pos", glm::vec3(10.0f, 20.0f, 10.0f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_light_color", glm::vec3(1.0f, 1.0f, 1.0f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_view_pos", camera->GetPosition());
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_ambient_strength", 0.3f);
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_use_texture", false);
+
+		// Bind SSBOs for vertex shader
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_POSITION_BINDING, m_position_ssbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_NORMAL_BINDING, m_normal_ssbo);
+
+		// Draw cloth mesh
+		glBindVertexArray(m_vao);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+		glDrawElements(GL_TRIANGLES, m_triangle_count * 3, GL_UNSIGNED_INT, nullptr);
+		glBindVertexArray(0);
 	}
 
 	//********************************************************************************
@@ -392,8 +454,63 @@ namespace RS_Cloth
 
 	void RSClothSimulator::CalculateNormals()
 	{
-		// TODO: Compute shader for normal calculation
-		// For now, update on CPU and transfer
+		// CPU-based normal calculation
+		// Read positions from GPU
+		std::vector<glm::vec4> positions(m_particle_count);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_position_ssbo);
+		glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, m_particle_count * sizeof(glm::vec4), positions.data());
+
+		// Initialize normals to zero
+		std::vector<glm::vec4> normals(m_particle_count, glm::vec4(0.0f));
+
+		// Calculate face normals and accumulate to vertices
+		for (int y = 0; y < m_cloth_height - 1; ++y)
+		{
+			for (int x = 0; x < m_cloth_width - 1; ++x)
+			{
+				int top_left = GetParticleIndex(x, y);
+				int top_right = GetParticleIndex(x + 1, y);
+				int bottom_left = GetParticleIndex(x, y + 1);
+				int bottom_right = GetParticleIndex(x + 1, y + 1);
+
+				glm::vec3 p0 = glm::vec3(positions[top_left]);
+				glm::vec3 p1 = glm::vec3(positions[bottom_left]);
+				glm::vec3 p2 = glm::vec3(positions[top_right]);
+				glm::vec3 p3 = glm::vec3(positions[bottom_right]);
+
+				// First triangle normal
+				glm::vec3 edge1 = p1 - p0;
+				glm::vec3 edge2 = p2 - p0;
+				glm::vec3 n1 = glm::cross(edge1, edge2);
+
+				// Second triangle normal
+				glm::vec3 edge3 = p1 - p2;
+				glm::vec3 edge4 = p3 - p2;
+				glm::vec3 n2 = glm::cross(edge3, edge4);
+
+				// Accumulate normals
+				normals[top_left] += glm::vec4(n1, 0.0f);
+				normals[bottom_left] += glm::vec4(n1 + n2, 0.0f);
+				normals[top_right] += glm::vec4(n1 + n2, 0.0f);
+				normals[bottom_right] += glm::vec4(n2, 0.0f);
+			}
+		}
+
+		// Normalize all normals
+		for (unsigned int i = 0; i < m_particle_count; ++i)
+		{
+			glm::vec3 n = glm::vec3(normals[i]);
+			float len = glm::length(n);
+			if (len > 0.0001f)
+				normals[i] = glm::vec4(n / len, 0.0f);
+			else
+				normals[i] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f); // Default up normal
+		}
+
+		// Upload to GPU
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_normal_ssbo);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, m_particle_count * sizeof(glm::vec4), normals.data());
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
 	//********************************************************************************

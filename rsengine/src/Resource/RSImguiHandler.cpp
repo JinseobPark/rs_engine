@@ -251,6 +251,13 @@ namespace RS_Handler
         any_property_changed = true;
       }
 
+      bool b_cloth_defered = RS_Graphics::mRSGRAPHICS->GetRenderingFlagBool(RenderingFlag::CLOTH_DEFERRED);
+      if (ImGui::Checkbox("Cloth Deferred", &b_cloth_defered))
+      {
+        RS_Graphics::mRSGRAPHICS->SetRenderingFlag(RenderingFlag::CLOTH_DEFERRED, b_cloth_defered);
+        any_property_changed = true;
+      }
+
       bool b_ssao = RS_Graphics::mRSGRAPHICS->GetRenderingFlagBool(RenderingFlag::SSAO);
       if (ImGui::Checkbox("SSAO", &b_ssao))
       {
@@ -409,6 +416,8 @@ namespace RS_Handler
         }
         ImGui::Separator();
       }
+
+
 
       bool b_radio_changed = false;
       // Select RSDataRenderType of graphics data with radio button

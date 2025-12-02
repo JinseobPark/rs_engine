@@ -12,6 +12,7 @@ namespace RS_Engine
 	RSEngine::RSEngine()
 	{
 		m_logger = new RS_Logger::RSLogger();
+		m_logger->SetLogLevel(LOG_LEVEL_INFO);
 		RS_ASSERT(mRSENGINE == nullptr, "Only One Render Engine");
 		mRSENGINE = this;
 		m_engine_last_time = static_cast<float>(glfwGetTime());
