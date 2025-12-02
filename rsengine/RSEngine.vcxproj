@@ -524,6 +524,7 @@ xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
     <ClCompile Include="src\Resource\Object\Component\Material\RSMaterial.cpp" />
     <ClCompile Include="src\Resource\Object\Component\RSTransform.cpp" />
     <ClCompile Include="src\Resource\Particle\PointClipper\RSPointClipper.cpp" />
+    <ClCompile Include="src\Resource\Particle\RSClothSimulator.cpp" />
     <ClCompile Include="src\Resource\Particle\VTKViewer\RSVTKViewer.cpp" />
     <ClCompile Include="src\Resource\Particle\Solvers\SPH\RSSCommon.cpp" />
     <ClCompile Include="src\Resource\Particle\Solvers\SPH\RSSDynamicBruteForce.cpp" />
@@ -644,6 +645,7 @@ xcopy /E /I /Y "$(ProjectDir)src\*.h" "$(SolutionDir)Headers\src"
     <ClInclude Include="src\Resource\Object\RSObject.h" />
     <ClInclude Include="src\Resource\Manager\RSObjectManager.h" />
     <ClInclude Include="src\Resource\Particle\PointClipper\RSPointClipper.h" />
+    <ClInclude Include="src\Resource\Particle\RSClothSimulator.h" />
     <ClInclude Include="src\Resource\Particle\RSParticleSimulator.h" />
     <ClInclude Include="src\Resource\Particle\RSParticleSystem.h" />
     <ClInclude Include="src\Resource\Particle\VTKViewer\RSVTKViewer.h" />

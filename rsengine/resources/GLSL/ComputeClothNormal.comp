@@ -1,0 +1,103 @@
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothNormal.comp
+\author Jinseob Park
+\date   2025/11/30
+
+Compute shader for calculating cloth normals.
+Computes per-vertex normals for smooth shading.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass
+};
+
+layout (std430, binding = 14) buffer NormalBuffer {
+    vec4 normals[];  // xyz: normal, w: unused
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+uniform int cloth_width;
+uniform int cloth_height;
+
+// Get particle index from grid coordinates
+int getIndex(int x, int y)
+{
+    return y * cloth_width + x;
+}
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    // Convert linear index to grid coordinates
+    int x = int(gid) % cloth_width;
+    int y = int(gid) / cloth_width;
+    
+    vec3 normal = vec3(0.0);
+    vec3 pos = positions[gid].xyz;
+    
+    // Accumulate normals from adjacent triangles
+    // Use cross product of edges
+    
+    // Right and down
+    if (x < cloth_width - 1 && y < cloth_height - 1)
+    {
+        vec3 right = positions[getIndex(x + 1, y)].xyz - pos;
+        vec3 down = positions[getIndex(x, y + 1)].xyz - pos;
+        normal += cross(right, down);
+    }
+    
+    // Down and left
+    if (x > 0 && y < cloth_height - 1)
+    {
+        vec3 down = positions[getIndex(x, y + 1)].xyz - pos;
+        vec3 left = positions[getIndex(x - 1, y)].xyz - pos;
+        normal += cross(down, left);
+    }
+    
+    // Left and up
+    if (x > 0 && y > 0)
+    {
+        vec3 left = positions[getIndex(x - 1, y)].xyz - pos;
+        vec3 up = positions[getIndex(x, y - 1)].xyz - pos;
+        normal += cross(left, up);
+    }
+    
+    // Up and right
+    if (x < cloth_width - 1 && y > 0)
+    {
+        vec3 up = positions[getIndex(x, y - 1)].xyz - pos;
+        vec3 right = positions[getIndex(x + 1, y)].xyz - pos;
+        normal += cross(up, right);
+    }
+    
+    // Normalize
+    float len = length(normal);
+    if (len > 0.0001)
+    {
+        normal = normal / len;
+    }
+    else
+    {
+        normal = vec3(0.0, 1.0, 0.0);  // Default up
+    }
+    
+    normals[gid] = vec4(normal, 0.0);
+}

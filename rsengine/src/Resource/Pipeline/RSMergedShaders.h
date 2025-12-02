@@ -7,10 +7,24 @@
  * 
  * 
  * \author Jinseob Park
- * \date   2025/11/28
+ * \date   2025/12/02
  *****************************************************************************/
 #ifndef RS_MERGED_SHADER_H_
 #define RS_MERGED_SHADER_H_
+
+extern const char* ClothRender_fs;
+
+extern const char* ClothRender_vs;
+
+extern const char* ComputeClothCollision_cs;
+
+extern const char* ComputeClothForce_cs;
+
+extern const char* ComputeClothIntegration_cs;
+
+extern const char* ComputeClothNormal_cs;
+
+extern const char* ComputeClothPBD_cs;
 
 extern const char* ComputeCMUDensity_cs;
 

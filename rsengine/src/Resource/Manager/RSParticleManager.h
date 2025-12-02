@@ -13,6 +13,7 @@ Have Fun with Rock & Stone
 
 #include "../Particle/RSParticleSystem.h"
 #include "../Particle/RSParticleSimulator.h"
+#include "../Particle/RSClothSimulator.h"
 #include "../Particle/VTKViewer/RSVTKViewer.h"
 #include "../Particle/PointClipper/RSPointClipper.h"
 
@@ -91,6 +92,19 @@ public:
 	*/
 	void SetUseSph(const bool use_sph) { b_use_sph = use_sph; }
 
+	/**
+	* @brief Get the particle system is using Cloth
+	* @return use cloth or not
+	*/
+	RS_N_D bool IsUseCloth() const { return b_use_cloth; }
+
+	/**
+	* @brief Set the particle system is using Cloth
+	* @param use_cloth use cloth or not
+	* @return void
+	*/
+	void SetUseCloth(const bool use_cloth) { b_use_cloth = use_cloth; }
+
 
   /**
    * @brief Create particle simulator
@@ -110,6 +124,33 @@ public:
    * @return true if it is existed
    */
   bool IsExistParticleSimulator() const { return m_particle_simulator != nullptr; }
+
+  //********************************************************************************
+  //******************************* Cloth Simulator ********************************
+  //********************************************************************************
+
+  /**
+   * @brief Create Cloth Simulator
+   * @return true if it is created successfully
+   */
+  bool CreateClothSimulator();
+
+  /**
+   * @brief Shutdown Cloth Simulator
+   */
+  void ShutdownClothSimulator();
+
+  /**
+   * @brief Check the cloth simulator is existed
+   * @return true if it is existed
+   */
+  bool IsExistClothSimulator() const { return m_cloth_simulator != nullptr; }
+
+  /**
+   * @brief Get the cloth simulator
+   * @return The cloth simulator pointer. If it is not exist, return nullptr
+   */
+  RS_Cloth::RSClothSimulator* GetClothSimulator() const { return m_cloth_simulator; }
 
 
 	//********************************************************************************
@@ -174,7 +215,9 @@ private:
   std::list<RSParticleSystem*> m_particle_systems; ///< particle system list
 
   bool b_use_sph = false; ///< use sph or not
+  bool b_use_cloth = false; ///< use cloth or not
   RSParticleSimulator* m_particle_simulator = nullptr; ///< particle simulator
+  RS_Cloth::RSClothSimulator* m_cloth_simulator = nullptr; ///< cloth simulator
   RS_PointClipper::RSPointClipper* m_point_clipper = nullptr; ///< point clipper
   RS_VTK::RSVTKViewer* m_vtk_viewer = nullptr; ///< vtk viewer
   std::list< RS_VTK::RSVTKViewer*> m_vtk_viewer_list; ///< vtk viewer list

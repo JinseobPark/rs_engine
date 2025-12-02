@@ -166,6 +166,7 @@
     <ClCompile Include="src\CommonLogic.cpp" />
     <ClCompile Include="src\GameData.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\LevelData\ClothSImulatorData.cpp" />
     <ClCompile Include="src\LevelData\JordyRollData.cpp" />
     <ClCompile Include="src\LevelData\ParticleSimulatorData.cpp" />
     <ClCompile Include="src\LevelData\PointClipperData.cpp" />
@@ -187,6 +188,7 @@
     <ClCompile Include="src\Widget\PointClipperWidget.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\LevelData\ClothSimulatorData.h" />
     <ClInclude Include="src\LevelData\JordyRollData.h" />
     <ClInclude Include="src\LevelData\ParticleSimulatorData.h" />
     <ClInclude Include="src\LevelData\VTKLoaderData.h" />

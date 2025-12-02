@@ -2,6 +2,800 @@
 #include "RSMergedShaders.h"
 
 
+/******************************** ClothRender *********************************/
+
+
+const char* ClothRender_fs = R"(
+
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ClothRender.frag
+\author Jinseob Park
+\date   2024/11/30
+
+Fragment shader for cloth rendering.
+Basic Phong/PBR shading for cloth material.
+
+*/
+/******************************************************************************/
+
+//********************************************************************************
+// Inputs
+//********************************************************************************
+
+in VS_OUT {
+    vec3 frag_pos;
+    vec3 normal;
+    vec2 tex_coord;
+} fs_in;
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+// Material
+uniform vec3 u_cloth_color;
+uniform float u_roughness;
+uniform float u_metallic;
+
+// Lighting
+uniform vec3 u_light_pos;
+uniform vec3 u_light_color;
+uniform vec3 u_view_pos;
+uniform float u_ambient_strength;
+
+// Optional texture
+uniform bool u_use_texture;
+uniform sampler2D u_cloth_texture;
+
+//********************************************************************************
+// Outputs
+//********************************************************************************
+
+out vec4 FragColor;
+
+// For Deferred rendering G-Buffer output
+layout (location = 0) out vec4 gPosition;
+layout (location = 1) out vec4 gNormal;
+layout (location = 2) out vec4 gAlbedoSpec;
+
+//********************************************************************************
+// Constants
+//********************************************************************************
+
+const float PI = 3.14159265359;
+
+//********************************************************************************
+// PBR Functions
+//********************************************************************************
+
+// Normal Distribution Function (GGX/Trowbridge-Reitz)
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+    
+    float num = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+    
+    return num / denom;
+}
+
+// Geometry Function (Schlick-GGX)
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    
+    float num = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+    
+    return num / denom;
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+    
+    return ggx1 * ggx2;
+}
+
+// Fresnel (Schlick approximation)
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+void main()
+{
+    // Get base color
+    vec3 albedo = u_cloth_color;
+    if (u_use_texture)
+    {
+        albedo *= texture(u_cloth_texture, fs_in.tex_coord).rgb;
+    }
+    
+    // Normal (double-sided)
+    vec3 N = normalize(fs_in.normal);
+    if (!gl_FrontFacing)
+        N = -N;
+    
+    vec3 V = normalize(u_view_pos - fs_in.frag_pos);
+    vec3 L = normalize(u_light_pos - fs_in.frag_pos);
+    vec3 H = normalize(V + L);
+    
+    // Calculate reflectance at normal incidence
+    vec3 F0 = vec3(0.04);  // Dielectric
+    F0 = mix(F0, albedo, u_metallic);
+    
+    // Cook-Torrance BRDF
+    float NDF = DistributionGGX(N, H, u_roughness);
+    float G = GeometrySmith(N, V, L, u_roughness);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+    
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular = numerator / denominator;
+    
+    // Energy conservation
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - u_metallic;
+    
+    // Final radiance
+    float NdotL = max(dot(N, L), 0.0);
+    vec3 Lo = (kD * albedo / PI + specular) * u_light_color * NdotL;
+    
+    // Ambient
+    vec3 ambient = u_ambient_strength * albedo;
+    
+    vec3 color = ambient + Lo;
+    
+    // HDR tonemapping
+    color = color / (color + vec3(1.0));
+    
+    // Gamma correction
+    color = pow(color, vec3(1.0/2.2));
+    
+    FragColor = vec4(color, 1.0);
+    
+    // G-Buffer output for deferred rendering
+    gPosition = vec4(fs_in.frag_pos, 1.0);
+    gNormal = vec4(N, 0.0);
+    gAlbedoSpec = vec4(albedo, u_roughness);
+}
+
+
+)";
+
+
+
+const char* ClothRender_vs = R"(
+
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ClothRender.vert
+\author Jinseob Park
+\date   2024/11/30
+
+Vertex shader for cloth rendering.
+Reads position and normal from SSBOs.
+
+*/
+/******************************************************************************/
+
+//********************************************************************************
+// SSBO Bindings (read-only for rendering)
+//********************************************************************************
+
+layout (std430, binding = 10) readonly buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass
+};
+
+layout (std430, binding = 14) readonly buffer NormalBuffer {
+    vec4 normals[];  // xyz: normal, w: unused
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform mat4 u_model;
+uniform mat4 u_view;
+uniform mat4 u_projection;
+uniform int cloth_width;
+
+//********************************************************************************
+// Outputs
+//********************************************************************************
+
+out VS_OUT {
+    vec3 frag_pos;
+    vec3 normal;
+    vec2 tex_coord;
+} vs_out;
+
+void main()
+{
+    // gl_VertexID is the index buffer value
+    uint particle_id = gl_VertexID;
+    
+    vec3 pos = positions[particle_id].xyz;
+    vec3 norm = normals[particle_id].xyz;
+    
+    // Calculate texture coordinates from grid position
+    int x = int(particle_id) % cloth_width;
+    int y = int(particle_id) / cloth_width;
+    vs_out.tex_coord = vec2(float(x) / float(cloth_width - 1), 
+                            float(y) / float(cloth_width - 1));
+    
+    // Transform
+    vec4 world_pos = u_model * vec4(pos, 1.0);
+    vs_out.frag_pos = world_pos.xyz;
+    vs_out.normal = mat3(transpose(inverse(u_model))) * norm;
+    
+    gl_Position = u_projection * u_view * world_pos;
+}
+
+
+)";
+
+
+
+
+
+/*************************** ComputeClothCollision ****************************/
+
+
+const char* ComputeClothCollision_cs = R"(
+
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothCollision.comp
+\author Jinseob Park
+\date   2025/11/30
+
+Compute shader for cloth collision detection and response.
+Handles sphere and plane collisions.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+uniform float collision_radius;
+
+// Sphere collision
+uniform bool use_sphere_collision;
+uniform vec3 sphere_center;
+uniform float sphere_radius;
+
+// Plane collision
+uniform bool use_plane_collision;
+uniform vec3 plane_point;
+uniform vec3 plane_normal;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    vec4 pos = positions[gid];
+    float inv_mass = pos.w;
+    
+    // Skip fixed particles
+    if (inv_mass <= 0.0)
+        return;
+    
+    vec3 p = pos.xyz;
+    
+    // Sphere collision
+    if (use_sphere_collision)
+    {
+        vec3 to_center = p - sphere_center;
+        float dist = length(to_center);
+        float min_dist = sphere_radius + collision_radius;
+        
+        if (dist < min_dist && dist > 0.0001)
+        {
+            vec3 normal = to_center / dist;
+            p = sphere_center + normal * min_dist;
+        }
+    }
+    
+    // Plane collision
+    if (use_plane_collision)
+    {
+        vec3 n = normalize(plane_normal);
+        float dist = dot(p - plane_point, n);
+        
+        if (dist < collision_radius)
+        {
+            p = p + n * (collision_radius - dist);
+        }
+    }
+    
+    positions[gid].xyz = p;
+}
+
+
+)";
+
+
+
+
+
+/***************************** ComputeClothForce ******************************/
+
+
+const char* ComputeClothForce_cs = R"(
+
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothForce.comp
+\author Jinseob Park
+\date   2025/11/30
+
+Compute shader for cloth spring force calculation.
+Mass-Spring model: calculates spring forces for all constraints.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings (Cloth uses 10-14 to avoid conflict with SPH 0-6)
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+layout (std430, binding = 12) buffer VelocityBuffer {
+    vec4 velocities[];  // xyz: velocity, w: unused
+};
+
+struct Spring {
+    int p1;           // First particle index
+    int p2;           // Second particle index
+    float rest_length;// Rest length
+    float stiffness;  // Spring stiffness
+};
+
+layout (std430, binding = 13) buffer SpringBuffer {
+    Spring springs[];
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+uniform uint spring_count;
+uniform float dt;
+uniform float damping;
+uniform vec3 gravity;
+uniform vec3 wind_direction;
+uniform float wind_strength;
+
+// Temporary force accumulator (could use atomic operations or reduction)
+layout (std430, binding = 15) buffer ForceBuffer {
+    vec4 forces[];  // xyz: accumulated force, w: unused
+};
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    // Initialize forces with external forces (gravity + wind)
+    if (gid < particle_count)
+    {
+        vec4 pos = positions[gid];
+        float inv_mass = pos.w;
+        
+        if (inv_mass > 0.0)  // Not fixed
+        {
+            vec3 external_force = gravity + wind_direction * wind_strength;
+            forces[gid] = vec4(external_force, 0.0);
+        }
+        else
+        {
+            forces[gid] = vec4(0.0);
+        }
+    }
+    
+    barrier();
+    memoryBarrierBuffer();
+    
+    // Calculate spring forces
+    // Note: This is a simplified version. For production, use atomic operations
+    // or a separate pass with proper synchronization
+    if (gid < spring_count)
+    {
+        Spring s = springs[gid];
+        
+        vec3 p1 = positions[s.p1].xyz;
+        vec3 p2 = positions[s.p2].xyz;
+        
+        vec3 delta = p2 - p1;
+        float current_length = length(delta);
+        
+        if (current_length > 0.0001)
+        {
+            vec3 direction = delta / current_length;
+            float displacement = current_length - s.rest_length;
+            vec3 force = s.stiffness * displacement * direction;
+            
+            // Apply forces (need atomic for correctness, simplified here)
+            float w1 = positions[s.p1].w;
+            float w2 = positions[s.p2].w;
+            
+            if (w1 > 0.0)
+            {
+                // atomicAdd equivalent for vec3 would be needed
+                // For now, this is a demonstration structure
+                forces[s.p1].xyz += force;
+            }
+            if (w2 > 0.0)
+            {
+                forces[s.p2].xyz -= force;
+            }
+        }
+    }
+}
+
+
+)";
+
+
+
+
+
+/************************** ComputeClothIntegration ***************************/
+
+
+const char* ComputeClothIntegration_cs = R"(
+
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothIntegration.comp
+\author Jinseob Park
+\date   2025/11/30
+
+Compute shader for cloth Verlet integration.
+Updates particle positions using Verlet integration scheme.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+layout (std430, binding = 12) buffer VelocityBuffer {
+    vec4 velocities[];  // xyz: velocity, w: unused
+};
+
+layout (std430, binding = 15) buffer ForceBuffer {
+    vec4 forces[];  // xyz: accumulated force, w: unused
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+uniform float dt;
+uniform float damping;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    vec4 pos = positions[gid];
+    float inv_mass = pos.w;
+    
+    // Skip fixed particles
+    if (inv_mass <= 0.0)
+        return;
+    
+    vec3 current = pos.xyz;
+    vec3 prev = prev_positions[gid].xyz;
+    vec3 force = forces[gid].xyz;
+    
+    // Verlet integration
+    // new_pos = current + damping * (current - prev) + acceleration * dt^2
+    vec3 acceleration = force * inv_mass;
+    vec3 new_pos = current + damping * (current - prev) + acceleration * dt * dt;
+    
+    // Update buffers
+    prev_positions[gid].xyz = current;
+    positions[gid].xyz = new_pos;
+    
+    // Calculate velocity for rendering/debugging
+    velocities[gid].xyz = (new_pos - current) / dt;
+}
+
+
+)";
+
+
+
+
+
+/***************************** ComputeClothNormal *****************************/
+
+
+const char* ComputeClothNormal_cs = R"(
+
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothNormal.comp
+\author Jinseob Park
+\date   2025/11/30
+
+Compute shader for calculating cloth normals.
+Computes per-vertex normals for smooth shading.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass
+};
+
+layout (std430, binding = 14) buffer NormalBuffer {
+    vec4 normals[];  // xyz: normal, w: unused
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+uniform int cloth_width;
+uniform int cloth_height;
+
+// Get particle index from grid coordinates
+int getIndex(int x, int y)
+{
+    return y * cloth_width + x;
+}
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    // Convert linear index to grid coordinates
+    int x = int(gid) % cloth_width;
+    int y = int(gid) / cloth_width;
+    
+    vec3 normal = vec3(0.0);
+    vec3 pos = positions[gid].xyz;
+    
+    // Accumulate normals from adjacent triangles
+    // Use cross product of edges
+    
+    // Right and down
+    if (x < cloth_width - 1 && y < cloth_height - 1)
+    {
+        vec3 right = positions[getIndex(x + 1, y)].xyz - pos;
+        vec3 down = positions[getIndex(x, y + 1)].xyz - pos;
+        normal += cross(right, down);
+    }
+    
+    // Down and left
+    if (x > 0 && y < cloth_height - 1)
+    {
+        vec3 down = positions[getIndex(x, y + 1)].xyz - pos;
+        vec3 left = positions[getIndex(x - 1, y)].xyz - pos;
+        normal += cross(down, left);
+    }
+    
+    // Left and up
+    if (x > 0 && y > 0)
+    {
+        vec3 left = positions[getIndex(x - 1, y)].xyz - pos;
+        vec3 up = positions[getIndex(x, y - 1)].xyz - pos;
+        normal += cross(left, up);
+    }
+    
+    // Up and right
+    if (x < cloth_width - 1 && y > 0)
+    {
+        vec3 up = positions[getIndex(x, y - 1)].xyz - pos;
+        vec3 right = positions[getIndex(x + 1, y)].xyz - pos;
+        normal += cross(up, right);
+    }
+    
+    // Normalize
+    float len = length(normal);
+    if (len > 0.0001)
+    {
+        normal = normal / len;
+    }
+    else
+    {
+        normal = vec3(0.0, 1.0, 0.0);  // Default up
+    }
+    
+    normals[gid] = vec4(normal, 0.0);
+}
+
+
+)";
+
+
+
+
+
+/****************************** ComputeClothPBD *******************************/
+
+
+const char* ComputeClothPBD_cs = R"(
+
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothPBD.comp
+\author Jinseob Park
+\date   2025/11/30
+
+Compute shader for Position Based Dynamics cloth simulation.
+Solves distance constraints using Gauss-Seidel iteration.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+struct Spring {
+    int p1;
+    int p2;
+    float rest_length;
+    float stiffness;
+};
+
+layout (std430, binding = 13) buffer SpringBuffer {
+    Spring springs[];
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint spring_count;
+uniform float compliance;  // XPBD compliance (0 = infinitely stiff)
+uniform float dt;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= spring_count)
+        return;
+    
+    Spring s = springs[gid];
+    
+    vec4 pos1 = positions[s.p1];
+    vec4 pos2 = positions[s.p2];
+    
+    float w1 = pos1.w;  // inverse mass
+    float w2 = pos2.w;
+    float w_sum = w1 + w2;
+    
+    if (w_sum < 0.0001)
+        return;  // Both particles fixed
+    
+    vec3 p1 = pos1.xyz;
+    vec3 p2 = pos2.xyz;
+    
+    vec3 delta = p2 - p1;
+    float current_length = length(delta);
+    
+    if (current_length < 0.0001)
+        return;
+    
+    // Distance constraint: C = |p2 - p1| - rest_length = 0
+    float C = current_length - s.rest_length;
+    
+    // XPBD correction with compliance
+    // alpha = compliance / dt^2
+    // delta_lambda = -C / (w1 + w2 + alpha)
+    float alpha = compliance / (dt * dt);
+    float delta_lambda = -C / (w_sum + alpha);
+    
+    vec3 gradient = delta / current_length;
+    vec3 correction = delta_lambda * gradient;
+    
+    // Apply corrections
+    if (w1 > 0.0)
+    {
+        positions[s.p1].xyz = p1 - w1 * correction;
+    }
+    if (w2 > 0.0)
+    {
+        positions[s.p2].xyz = p2 + w2 * correction;
+    }
+}
+
+
+)";
+
+
+
+
+
 /***************************** ComputeCMUDensity ******************************/
 
 
@@ -6882,7 +7676,7 @@ void main()
     }
     else if (mode == 5) // Sepia
     {
-        float gray = dot(color, vec3(0.299, 0.587, 0.114));
+        float gray = dot(color, vec3(0.299, 0.587, 0.114)); // Luminosity method
         result = vec3(gray * weights.x, gray * weights.y, gray * weights.z);
     }
     else if (mode == 6) // Invert
@@ -6891,7 +7685,7 @@ void main()
     }
     else if (mode == 7) // Custom - use weights as multipliers
     {
-        float gray = dot(color, vec3(0.299, 0.587, 0.114));
+        float gray = dot(color, vec3(0.299, 0.587, 0.114)); // Luminosity method
         result = vec3(gray) * weights;
     }
     

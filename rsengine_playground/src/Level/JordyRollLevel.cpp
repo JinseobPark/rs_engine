@@ -13,7 +13,7 @@ namespace SJG
 	{
 		m_resource_manager = RSResourceManager::GetInstance();
 		m_jordy_roll_data = new JordyRollData();
-    m_jordy_roll_widget = new JordyRollWidget();
+		m_jordy_roll_widget = new JordyRollWidget();
 
 		RS_Application::mRSAPPLICATION->SetWindowIcon("resources/InitLoadFiles/Textures/jordy_alpha2.png");
 		RS_Application::mRSAPPLICATION->SetWindowTitle("Jordy kawaii");

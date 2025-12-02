@@ -1,0 +1,96 @@
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothPBD.comp
+\author Jinseob Park
+\date   2025/11/30
+
+Compute shader for Position Based Dynamics cloth simulation.
+Solves distance constraints using Gauss-Seidel iteration.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+struct Spring {
+    int p1;
+    int p2;
+    float rest_length;
+    float stiffness;
+};
+
+layout (std430, binding = 13) buffer SpringBuffer {
+    Spring springs[];
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint spring_count;
+uniform float compliance;  // XPBD compliance (0 = infinitely stiff)
+uniform float dt;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= spring_count)
+        return;
+    
+    Spring s = springs[gid];
+    
+    vec4 pos1 = positions[s.p1];
+    vec4 pos2 = positions[s.p2];
+    
+    float w1 = pos1.w;  // inverse mass
+    float w2 = pos2.w;
+    float w_sum = w1 + w2;
+    
+    if (w_sum < 0.0001)
+        return;  // Both particles fixed
+    
+    vec3 p1 = pos1.xyz;
+    vec3 p2 = pos2.xyz;
+    
+    vec3 delta = p2 - p1;
+    float current_length = length(delta);
+    
+    if (current_length < 0.0001)
+        return;
+    
+    // Distance constraint: C = |p2 - p1| - rest_length = 0
+    float C = current_length - s.rest_length;
+    
+    // XPBD correction with compliance
+    // alpha = compliance / dt^2
+    // delta_lambda = -C / (w1 + w2 + alpha)
+    float alpha = compliance / (dt * dt);
+    float delta_lambda = -C / (w_sum + alpha);
+    
+    vec3 gradient = delta / current_length;
+    vec3 correction = delta_lambda * gradient;
+    
+    // Apply corrections
+    if (w1 > 0.0)
+    {
+        positions[s.p1].xyz = p1 - w1 * correction;
+    }
+    if (w2 > 0.0)
+    {
+        positions[s.p2].xyz = p2 + w2 * correction;
+    }
+}

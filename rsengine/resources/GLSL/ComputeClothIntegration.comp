@@ -1,0 +1,73 @@
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothIntegration.comp
+\author Jinseob Park
+\date   2025/11/30
+
+Compute shader for cloth Verlet integration.
+Updates particle positions using Verlet integration scheme.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+layout (std430, binding = 12) buffer VelocityBuffer {
+    vec4 velocities[];  // xyz: velocity, w: unused
+};
+
+layout (std430, binding = 15) buffer ForceBuffer {
+    vec4 forces[];  // xyz: accumulated force, w: unused
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+uniform float dt;
+uniform float damping;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    vec4 pos = positions[gid];
+    float inv_mass = pos.w;
+    
+    // Skip fixed particles
+    if (inv_mass <= 0.0)
+        return;
+    
+    vec3 current = pos.xyz;
+    vec3 prev = prev_positions[gid].xyz;
+    vec3 force = forces[gid].xyz;
+    
+    // Verlet integration
+    // new_pos = current + damping * (current - prev) + acceleration * dt^2
+    vec3 acceleration = force * inv_mass;
+    vec3 new_pos = current + damping * (current - prev) + acceleration * dt * dt;
+    
+    // Update buffers
+    prev_positions[gid].xyz = current;
+    positions[gid].xyz = new_pos;
+    
+    // Calculate velocity for rendering/debugging
+    velocities[gid].xyz = (new_pos - current) / dt;
+}

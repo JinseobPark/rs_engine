@@ -95,7 +95,7 @@ namespace SJG
 		//}
 
 		RS_Application::mRSAPPLICATION->SetWindowIcon("resources/InitLoadFiles/Textures/bono.png");
-		RS_Application::mRSAPPLICATION->SetWindowTitle("NFLOW AI");
+		RS_Application::mRSAPPLICATION->SetWindowTitle("RS Engine Fluid Simulator");
 
 		RS_MSG("Particle Simulator Level Loaded");
 	}

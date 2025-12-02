@@ -124,6 +124,11 @@ namespace RS_Handler
 		 */
 		void ShowVtkControllerItems();
 
+    /**
+     * @brief Show Cloth Simulator Control Items.
+		 */
+		void ShowClothSimulatorItems();
+
 
     /**
      * @brief Show Viewport.

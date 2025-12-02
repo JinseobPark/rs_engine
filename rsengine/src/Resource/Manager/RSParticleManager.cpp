@@ -6,15 +6,17 @@ namespace RS_Particle
 	RSParticleManager::RSParticleManager()
 	{
 		m_particle_simulator = nullptr;
-    m_point_clipper = nullptr;
-    m_vtk_viewer = nullptr;
+		m_cloth_simulator = nullptr;
+	    m_point_clipper = nullptr;
+	    m_vtk_viewer = nullptr;
 	}
 
 	RSParticleManager::~RSParticleManager()
 	{
-    delete m_particle_simulator;
-    delete m_point_clipper;
-    delete m_vtk_viewer;
+	    delete m_particle_simulator;
+	    delete m_cloth_simulator;
+	    delete m_point_clipper;
+	    delete m_vtk_viewer;
 	}
 
 	void RSParticleManager::Initialize()
@@ -25,6 +27,7 @@ namespace RS_Particle
 	void RSParticleManager::Shutdown()
 	{
 		ShutdownParticleSimulator();
+		ShutdownClothSimulator();
 		ShutdownPointClipper();
 		ShutdownVtkViewer();
 	}
@@ -33,6 +36,9 @@ namespace RS_Particle
 	{
     if (b_use_sph && m_particle_simulator)
       m_particle_simulator->Update(dt);
+
+    if (b_use_cloth && m_cloth_simulator)
+      m_cloth_simulator->Update(dt);
 
     if (m_point_clipper)
       m_point_clipper->Update(dt);
@@ -50,14 +56,17 @@ namespace RS_Particle
 		if (m_point_clipper)
 			m_point_clipper->Draw();
 
-    if (m_vtk_viewer)
-      m_vtk_viewer->Draw();
+	    if (m_vtk_viewer)
+	      m_vtk_viewer->Draw();
 	}
 
 	void RSParticleManager::DeferredDraw()
 	{
 		if (b_use_sph && m_particle_simulator)
 			m_particle_simulator->DeferredDraw();
+
+		if (b_use_cloth && m_cloth_simulator)
+			m_cloth_simulator->DeferredDraw();
 
 		if (m_point_clipper)
 			m_point_clipper->Draw();
@@ -70,6 +79,9 @@ namespace RS_Particle
 	{
 		if (b_use_sph && m_particle_simulator)
 			m_particle_simulator->ForwardDraw();
+
+		if (b_use_cloth && m_cloth_simulator)
+			m_cloth_simulator->ForwardDraw();
 
 		if (m_point_clipper)
 			m_point_clipper->Draw();
@@ -141,6 +153,28 @@ namespace RS_Particle
       m_particle_simulator = nullptr;
     }
   }
+
+	bool RSParticleManager::CreateClothSimulator()
+	{
+		if (m_cloth_simulator)
+		{
+		RS_WARN("Cloth Simulator already exist");
+		return false;
+		}
+
+		m_cloth_simulator = new RS_Cloth::RSClothSimulator();
+		return true;
+	}
+
+	void RSParticleManager::ShutdownClothSimulator()
+	{
+    if (m_cloth_simulator)
+    {
+      m_cloth_simulator->Shutdown();
+      delete m_cloth_simulator;
+      m_cloth_simulator = nullptr;
+    }
+	}
 
 	void RSParticleManager::CreateVtkViewer()
 	{

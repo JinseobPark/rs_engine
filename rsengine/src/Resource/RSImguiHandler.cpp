@@ -6,6 +6,7 @@
 #include "../Systems/Graphics/RSGraphics.h"
 #include "RSEngine.h"
 #include "Particle/VTKViewer/RSVTKViewer.h"
+#include "Particle/RSClothSimulator.h"
 //#include "imgui/imgui.h"
 //#include "imgui/imgui_impl_glfw.h"
 //#include "imgui/imgui_impl_opengl3.h"
@@ -41,10 +42,8 @@ namespace RS_Handler
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.WantCaptureMouse = true;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
-    //ImFont* test_font = io.Fonts->AddFontFromFileTTF("resources/Font/E8Font.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesDefault());
-    //m_font = io.Fonts->AddFontFromFileTTF("resources/Font/E8Font.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesKorean());
-	// Get Korean Font from windows system
-	m_font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesKorean());
+  	// Get Korean Font from windows system
+	  m_font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesKorean());
 
     //m_font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\HMFMPYUN.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesKorean());
 
@@ -460,6 +459,7 @@ namespace RS_Handler
       ShowManagerItems();
       ShowCameraItems();
       ShowPlayItems();
+      ShowClothSimulatorItems();
       ShowPointClipperItems();
       ShowVtkControllerItems();
       ShowViewport();
@@ -1139,6 +1139,152 @@ namespace RS_Handler
     ImGui::End();
 
   } 
+
+  void RSImguiHandler::ShowClothSimulatorItems()
+  {
+    if (!RSResourceManager::GetInstance()->GetParticleManager()->IsUseCloth())
+      return;
+
+    RS_Cloth::RSClothSimulator* p_cloth = RSResourceManager::GetInstance()->GetParticleManager()->GetClothSimulator();
+    if (!p_cloth)
+      return;
+
+    ImGui::Begin("Cloth Simulator Control");
+
+    //********************************************************************************
+    // Simulation Control
+    //********************************************************************************
+    ImGui::Text("Simulation Control");
+    ImGui::Separator();
+
+    // Play/Pause button
+    if (p_cloth->IsPlaying())
+    {
+      if (ImGui::Button("Pause"))
+        p_cloth->SetPlaying(false);
+    }
+    else
+    {
+      if (ImGui::Button("Play"))
+        p_cloth->SetPlaying(true);
+    }
+    ImGui::SameLine();
+
+    // Reset button
+    if (ImGui::Button("Reset"))
+      p_cloth->ResetSimulation();
+
+    // Solver type
+    int solver_type = static_cast<int>(p_cloth->GetSolverType());
+    if (ImGui::Combo("Solver Type", &solver_type, "Mass-Spring\0PBD\0"))
+      p_cloth->SetSolverType(static_cast<RSClothSolverType>(solver_type));
+
+    // Info display
+    ImGui::Text("Particles: %d", p_cloth->GetParticleCount());
+    ImGui::Text("Springs: %d", p_cloth->GetSpringCount());
+    ImGui::Text("Triangles: %d", p_cloth->GetTriangleCount());
+
+    ImGui::Spacing();
+
+    //********************************************************************************
+    // Cloth Properties
+    //********************************************************************************
+    if (ImGui::CollapsingHeader("Cloth Properties", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+      // Stiffness parameters
+      if (ImGui::SliderFloat("Structural Stiffness", &p_cloth->m_cloth_property.structural_stiffness, 1.0f, 200.0f))
+        p_cloth->b_property_changed = true;
+
+      if (ImGui::SliderFloat("Shear Stiffness", &p_cloth->m_cloth_property.shear_stiffness, 1.0f, 100.0f))
+        p_cloth->b_property_changed = true;
+
+      if (ImGui::SliderFloat("Bend Stiffness", &p_cloth->m_cloth_property.bend_stiffness, 0.1f, 50.0f))
+        p_cloth->b_property_changed = true;
+
+      if (ImGui::SliderFloat("Damping", &p_cloth->m_cloth_property.damping, 0.9f, 1.0f))
+        p_cloth->b_property_changed = true;
+
+      if (ImGui::SliderFloat("Gravity", &p_cloth->m_cloth_property.gravity, 0.0f, 20.0f))
+        p_cloth->b_property_changed = true;
+
+      // PBD specific
+      if (p_cloth->GetSolverType() == RSClothSolverType::PBD)
+      {
+        if (ImGui::SliderInt("Solver Iterations", &p_cloth->m_cloth_property.solver_iterations, 1, 50))
+          p_cloth->b_property_changed = true;
+      }
+    }
+
+    ImGui::Spacing();
+
+    //********************************************************************************
+    // Wind Control
+    //********************************************************************************
+    if (ImGui::CollapsingHeader("Wind", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+      glm::vec3 wind_dir = p_cloth->GetWindDirection();
+      if (ImGui::SliderFloat3("Wind Direction", glm::value_ptr(wind_dir), -1.0f, 1.0f))
+        p_cloth->SetWindDirection(wind_dir);
+
+      float wind_strength = p_cloth->GetWindStrength();
+      if (ImGui::SliderFloat("Wind Strength", &wind_strength, 0.0f, 50.0f))
+        p_cloth->SetWindStrength(wind_strength);
+    }
+
+    ImGui::Spacing();
+
+    //********************************************************************************
+    // Collision Control
+    //********************************************************************************
+    if (ImGui::CollapsingHeader("Collision"))
+    {
+      // Sphere collision
+      ImGui::Checkbox("Sphere Collision", &p_cloth->b_use_sphere_collision);
+      if (p_cloth->b_use_sphere_collision)
+      {
+        ImGui::InputFloat3("Sphere Center", glm::value_ptr(p_cloth->m_collision_sphere.center));
+        ImGui::SliderFloat("Sphere Radius", &p_cloth->m_collision_sphere.radius, 0.1f, 10.0f);
+      }
+
+      ImGui::Separator();
+
+      // Plane collision
+      ImGui::Checkbox("Plane Collision", &p_cloth->b_use_plane_collision);
+      if (p_cloth->b_use_plane_collision)
+      {
+        ImGui::InputFloat3("Plane Point", glm::value_ptr(p_cloth->m_collision_plane.point));
+        ImGui::InputFloat3("Plane Normal", glm::value_ptr(p_cloth->m_collision_plane.normal));
+      }
+    }
+
+    ImGui::Spacing();
+
+    //********************************************************************************
+    // Init Settings (requires reset)
+    //********************************************************************************
+    if (ImGui::CollapsingHeader("Init Settings (Reset Required)"))
+    {
+      ImGui::InputFloat3("Start Position", glm::value_ptr(p_cloth->m_init_setting.start_position));
+      ImGui::InputInt("Width", &p_cloth->m_init_setting.width);
+      ImGui::InputInt("Height", &p_cloth->m_init_setting.height);
+      ImGui::SliderFloat("Spacing", &p_cloth->m_init_setting.spacing, 0.05f, 1.0f);
+
+      ImGui::Separator();
+      ImGui::Text("Pin Constraints:");
+      ImGui::Checkbox("Fix Top-Left", &p_cloth->m_init_setting.fix_top_left);
+      ImGui::SameLine();
+      ImGui::Checkbox("Fix Top-Right", &p_cloth->m_init_setting.fix_top_right);
+      ImGui::Checkbox("Fix Bottom-Left", &p_cloth->m_init_setting.fix_bottom_left);
+      ImGui::SameLine();
+      ImGui::Checkbox("Fix Bottom-Right", &p_cloth->m_init_setting.fix_bottom_right);
+      ImGui::Checkbox("Fix Top Edge", &p_cloth->m_init_setting.fix_top_edge);
+
+      if (ImGui::Button("Apply & Reset"))
+        p_cloth->ResetSimulation();
+    }
+
+    ImGui::End();
+  }
 
   void RSImguiHandler::ShowViewport()
   {

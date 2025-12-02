@@ -29,7 +29,6 @@ namespace RS_Texture
 		// find path to font
 
 		const std::string font_name = "C:\\Windows\\Fonts\\HMFMPYUN.ttf";
-		//const std::string font_name = "resources/InitLoadFiles/Font/E8Font.ttf";
 
 		if (font_name.empty())
 		{

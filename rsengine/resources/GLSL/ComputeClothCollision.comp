@@ -1,0 +1,88 @@
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothCollision.comp
+\author Jinseob Park
+\date   2025/11/30
+
+Compute shader for cloth collision detection and response.
+Handles sphere and plane collisions.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+uniform float collision_radius;
+
+// Sphere collision
+uniform bool use_sphere_collision;
+uniform vec3 sphere_center;
+uniform float sphere_radius;
+
+// Plane collision
+uniform bool use_plane_collision;
+uniform vec3 plane_point;
+uniform vec3 plane_normal;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    vec4 pos = positions[gid];
+    float inv_mass = pos.w;
+    
+    // Skip fixed particles
+    if (inv_mass <= 0.0)
+        return;
+    
+    vec3 p = pos.xyz;
+    
+    // Sphere collision
+    if (use_sphere_collision)
+    {
+        vec3 to_center = p - sphere_center;
+        float dist = length(to_center);
+        float min_dist = sphere_radius + collision_radius;
+        
+        if (dist < min_dist && dist > 0.0001)
+        {
+            vec3 normal = to_center / dist;
+            p = sphere_center + normal * min_dist;
+        }
+    }
+    
+    // Plane collision
+    if (use_plane_collision)
+    {
+        vec3 n = normalize(plane_normal);
+        float dist = dot(p - plane_point, n);
+        
+        if (dist < collision_radius)
+        {
+            p = p + n * (collision_radius - dist);
+        }
+    }
+    
+    positions[gid].xyz = p;
+}

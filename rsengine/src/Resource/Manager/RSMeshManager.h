@@ -11,7 +11,6 @@ This file contains 3D Geometry Mesh Manager.
 #ifndef RS_MESH_MANAGER_H_
 #define RS_MESH_MANAGER_H_
 #include "../Object/Component/Mesh/RSMesh.h"
-#include "../Object/Component/Mesh/RSMeshSTL.h"
 #include "../Object/Component/Mesh/RSGeometryGenerator.h"
 #include <map>
 
