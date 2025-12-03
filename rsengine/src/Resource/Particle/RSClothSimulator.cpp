@@ -12,6 +12,8 @@ This file contains cloth simulator implementation for Mass-Spring / PBD simulati
 #include "RSClothSimulator.h"
 #include "../Manager/RSShaderManager.h"
 #include "../Manager/RSResourceManager.h"
+#include "../Manager/RSObjectManager.h"
+#include "../Object/RSObject.h"
 
 namespace RS_Cloth
 {
@@ -59,6 +61,12 @@ namespace RS_Cloth
 		TransferParticleDataToGPU();
 		TransferSpringDataToGPU();
 
+		// Set collision objects
+		SetCollisionObjects();
+
+		// Set Material
+		SetClothMaterial(RSResourceManager::GetInstance()->GetMaterialManager()->GetMaterial("cloth"));
+
 		m_initialized = true;
 		RS_INFO("Cloth Simulator initialized: %d particles, %d springs", m_particle_count, m_spring_count);
 	}
@@ -72,6 +80,7 @@ namespace RS_Cloth
 
 		ResetAllBuffers();
 		DeallocateCloth();
+		SetClothMaterial(nullptr);
 
 		m_initialized = false;
 	}
@@ -163,7 +172,7 @@ namespace RS_Cloth
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "cloth_width", m_cloth_width);
 
 		// Set material properties
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_cloth_color", glm::vec3(0.8f, 0.2f, 0.2f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_cloth_color", glm::vec3(0.8f, 1.0f, 0.2f));
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_roughness", 0.5f);
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_metallic", 0.0f);
 
@@ -172,7 +181,11 @@ namespace RS_Cloth
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_light_color", glm::vec3(1.0f, 1.0f, 1.0f));
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_view_pos", camera->GetPosition());
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_ambient_strength", 0.3f);
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_use_texture", false);
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_use_texture", true);
+
+		// Apply material to shader
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_cloth_material->GetDiffuseMap());
 
 		// Bind SSBOs for vertex shader
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_POSITION_BINDING, m_position_ssbo);
@@ -442,16 +455,6 @@ namespace RS_Cloth
 		m_wind_strength = wind_strength;
 	}
 
-	void RSClothSimulator::HandleSphereCollision(const RSCollisionSphere& sphere)
-	{
-		m_collision_sphere = sphere;
-	}
-
-	void RSClothSimulator::HandlePlaneCollision(const RSCollisionPlane& plane)
-	{
-		m_collision_plane = plane;
-	}
-
 	void RSClothSimulator::CalculateNormals()
 	{
 		// CPU-based normal calculation
@@ -598,21 +601,32 @@ namespace RS_Cloth
 		// Collision detection
 		if (b_use_sphere_collision)
 		{
-			for (unsigned int i = 0; i < m_particle_count; ++i)
+			// Find sphere object by name
+			// auto object_manager = RSResourceManager::GetInstance()->GetObjectManager();
+			// m_collision_sphere_object = object_manager->FindObject(m_collision_sphere_name);
+			
+			if (m_collision_sphere_object)
 			{
-				if (positions[i].w > 0.0f)
+				glm::vec3 sphere_center = m_collision_sphere_object->GetTransform()->GetPosition();
+				glm::vec3 sphere_scale = m_collision_sphere_object->GetTransform()->GetScale();
+				float sphere_radius = sphere_scale.x;  // Assume uniform scale for sphere
+				
+				for (unsigned int i = 0; i < m_particle_count; ++i)
 				{
-					glm::vec3 pos = glm::vec3(positions[i]);
-					glm::vec3 to_center = pos - m_collision_sphere.center;
-					float dist = glm::length(to_center);
-
-					if (dist < m_collision_sphere.radius + m_cloth_property.collision_radius)
+					if (positions[i].w > 0.0f)
 					{
-						glm::vec3 normal = to_center / dist;
-						positions[i] = glm::vec4(
-							m_collision_sphere.center + normal * (m_collision_sphere.radius + m_cloth_property.collision_radius),
-							positions[i].w
-						);
+						glm::vec3 pos = glm::vec3(positions[i]);
+						glm::vec3 to_center = pos - sphere_center;
+						float dist = glm::length(to_center);
+
+						if (dist < sphere_radius + m_cloth_property.collision_radius)
+						{
+							glm::vec3 normal = to_center / dist;
+							positions[i] = glm::vec4(
+								sphere_center + normal * (sphere_radius + m_cloth_property.collision_radius),
+								positions[i].w
+							);
+						}
 					}
 				}
 			}
@@ -620,19 +634,29 @@ namespace RS_Cloth
 
 		if (b_use_plane_collision)
 		{
-			for (unsigned int i = 0; i < m_particle_count; ++i)
+			// Find plane object by name
+			// auto object_manager = RSResourceManager::GetInstance()->GetObjectManager();
+			// m_collision_plane_object = object_manager->FindObject(m_collision_plane_name);
+			
+			if (m_collision_plane_object)
 			{
-				if (positions[i].w > 0.0f)
+				glm::vec3 plane_point = m_collision_plane_object->GetTransform()->GetPosition();
+				glm::vec3 plane_normal = glm::vec3(0.0f, 1.0f, 0.0f);  // Default up normal for plane
+				
+				for (unsigned int i = 0; i < m_particle_count; ++i)
 				{
-					glm::vec3 pos = glm::vec3(positions[i]);
-					float dist = glm::dot(pos - m_collision_plane.point, m_collision_plane.normal);
-
-					if (dist < m_cloth_property.collision_radius)
+					if (positions[i].w > 0.0f)
 					{
-						positions[i] = glm::vec4(
-							pos + m_collision_plane.normal * (m_cloth_property.collision_radius - dist),
-							positions[i].w
-						);
+						glm::vec3 pos = glm::vec3(positions[i]);
+						float dist = glm::dot(pos - plane_point, plane_normal);
+
+						if (dist < m_cloth_property.collision_radius)
+						{
+							positions[i] = glm::vec4(
+								pos + plane_normal * (m_cloth_property.collision_radius - dist),
+								positions[i].w
+							);
+						}
 					}
 				}
 			}
@@ -727,21 +751,32 @@ namespace RS_Cloth
 		// Collision constraints
 		if (b_use_sphere_collision)
 		{
-			for (unsigned int i = 0; i < m_particle_count; ++i)
+			// Find sphere object by name
+			// auto object_manager = RSResourceManager::GetInstance()->GetObjectManager();
+			// m_collision_sphere_object = object_manager->FindObject(m_collision_sphere_name);
+			
+			if (m_collision_sphere_object)
 			{
-				if (positions[i].w > 0.0f)
+				glm::vec3 sphere_center = m_collision_sphere_object->GetTransform()->GetPosition();
+				glm::vec3 sphere_scale = m_collision_sphere_object->GetTransform()->GetScale();
+				float sphere_radius = sphere_scale.x;  // Assume uniform scale for sphere
+				
+				for (unsigned int i = 0; i < m_particle_count; ++i)
 				{
-					glm::vec3 pos = glm::vec3(positions[i]);
-					glm::vec3 to_center = pos - m_collision_sphere.center;
-					float dist = glm::length(to_center);
-
-					if (dist < m_collision_sphere.radius + m_cloth_property.collision_radius)
+					if (positions[i].w > 0.0f)
 					{
-						glm::vec3 normal = to_center / dist;
-						positions[i] = glm::vec4(
-							m_collision_sphere.center + normal * (m_collision_sphere.radius + m_cloth_property.collision_radius),
-							positions[i].w
-						);
+						glm::vec3 pos = glm::vec3(positions[i]);
+						glm::vec3 to_center = pos - sphere_center;
+						float dist = glm::length(to_center);
+
+						if (dist < sphere_radius + m_cloth_property.collision_radius)
+						{
+							glm::vec3 normal = to_center / dist;
+							positions[i] = glm::vec4(
+								sphere_center + normal * (sphere_radius + m_cloth_property.collision_radius),
+								positions[i].w
+							);
+						}
 					}
 				}
 			}
@@ -749,19 +784,29 @@ namespace RS_Cloth
 
 		if (b_use_plane_collision)
 		{
-			for (unsigned int i = 0; i < m_particle_count; ++i)
+			// Find plane object by name
+			// auto object_manager = RSResourceManager::GetInstance()->GetObjectManager();
+			// m_collision_plane_object = object_manager->FindObject(m_collision_plane_name);
+			
+			if (m_collision_plane_object)
 			{
-				if (positions[i].w > 0.0f)
+				glm::vec3 plane_point = m_collision_plane_object->GetTransform()->GetPosition();
+				glm::vec3 plane_normal = glm::vec3(0.0f, 1.0f, 0.0f);  // Default up normal for plane
+				
+				for (unsigned int i = 0; i < m_particle_count; ++i)
 				{
-					glm::vec3 pos = glm::vec3(positions[i]);
-					float dist = glm::dot(pos - m_collision_plane.point, m_collision_plane.normal);
-
-					if (dist < m_cloth_property.collision_radius)
+					if (positions[i].w > 0.0f)
 					{
-						positions[i] = glm::vec4(
-							pos + m_collision_plane.normal * (m_cloth_property.collision_radius - dist),
-							positions[i].w
-						);
+						glm::vec3 pos = glm::vec3(positions[i]);
+						float dist = glm::dot(pos - plane_point, plane_normal);
+
+						if (dist < m_cloth_property.collision_radius)
+						{
+							positions[i] = glm::vec4(
+								pos + plane_normal * (m_cloth_property.collision_radius - dist),
+								positions[i].w
+							);
+						}
 					}
 				}
 			}
@@ -933,6 +978,38 @@ namespace RS_Cloth
 		TransferSpringDataToGPU();
 
 		RS_INFO("Cloth simulation reset");
+	}
+
+	void RSClothSimulator::SetCollisionObjects()
+	{
+		auto object_manager = RSResourceManager::GetInstance()->GetObjectManager();
+		
+		// Update sphere object reference
+		m_collision_sphere_object = object_manager->FindObject(m_collision_sphere_name);
+		
+		// Update plane object reference
+		m_collision_plane_object = object_manager->FindObject(m_collision_plane_name);
+	}
+
+	bool RSClothSimulator::GetSphereCollisionParams(glm::vec3& center, float& radius) const
+	{
+		if (!m_collision_sphere_object)
+			return false;
+		
+		center = m_collision_sphere_object->GetTransform()->GetPosition();
+		glm::vec3 scale = m_collision_sphere_object->GetTransform()->GetScale();
+		radius = scale.x;  // Assume uniform scale for sphere
+		return true;
+	}
+
+	bool RSClothSimulator::GetPlaneCollisionParams(glm::vec3& point, glm::vec3& normal) const
+	{
+		if (!m_collision_plane_object)
+			return false;
+		
+		point = m_collision_plane_object->GetTransform()->GetPosition();
+		normal = glm::vec3(0.0f, 1.0f, 0.0f);  // Default Y-up normal
+		return true;
 	}
 
 } // namespace RS_Cloth

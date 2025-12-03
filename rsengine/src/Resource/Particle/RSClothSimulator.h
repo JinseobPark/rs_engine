@@ -15,6 +15,12 @@ Single Cloth System with Compute Shader for CLO Virtual Fashion Portfolio.
 #include "glm/glm.hpp"
 #include <GL/glew.h>
 #include <vector>
+#include <string>
+
+namespace RS_Material
+{
+	class RSMaterial;
+}
 
 //********************************************************************************
 // SSBO Binding Constants for Cloth Simulation
@@ -284,17 +290,17 @@ namespace RS_Cloth
 		 */
 		void ApplyWind(const glm::vec3& wind_direction, float wind_strength);
 
-		/**
-		 * @brief Handle collision with sphere
-		 * @param sphere collision sphere
-		 */
-		void HandleSphereCollision(const RSCollisionSphere& sphere);
+		// /**
+		//  * @brief Handle collision with sphere object
+		//  * @param object_name Name of the collision sphere object
+		//  */
+		// void HandleSphereCollision(const std::string& object_name);
 
-		/**
-		 * @brief Handle collision with plane
-		 * @param plane collision plane
-		 */
-		void HandlePlaneCollision(const RSCollisionPlane& plane);
+		// /**
+		//  * @brief Handle collision with plane object
+		//  * @param object_name Name of the collision plane object
+		//  */
+		// void HandlePlaneCollision(const std::string& object_name);
 
 		/**
 		 * @brief Calculate normals for rendering
@@ -323,11 +329,9 @@ namespace RS_Cloth
 		void SetInitSetting(const RSClothInitSetting& setting) { m_init_setting = setting; }
 		RS_N_D RSClothInitSetting GetInitSetting() const { return m_init_setting; }
 
-		// Collision objects
-		void SetCollisionSphere(const RSCollisionSphere& sphere) { m_collision_sphere = sphere; b_use_sphere_collision = true; }
-		void SetCollisionPlane(const RSCollisionPlane& plane) { m_collision_plane = plane; b_use_plane_collision = true; }
-		void EnableSphereCollision(bool enable) { b_use_sphere_collision = enable; }
-		void EnablePlaneCollision(bool enable) { b_use_plane_collision = enable; }
+		// Collision objects (by object name)
+		void SetCollisionSphere(const std::string& object_name);
+		void SetCollisionPlane(const std::string& object_name);
 
 		// Wind
 		void SetWindDirection(const glm::vec3& dir) { m_wind_direction = glm::normalize(dir); }
@@ -394,6 +398,30 @@ namespace RS_Cloth
 		 */
 		void CreateIndexBuffer();
 
+		/**
+		 * @brief Update collision object references from ObjectManager
+		 * Finds objects by name and caches their pointers
+		 */
+		void SetCollisionObjects();
+
+		/**
+		 * @brief Get collision sphere parameters from object transform
+		 * @param[out] center Sphere center position
+		 * @param[out] radius Sphere radius (from scale.x)
+		 * @return true if sphere object is valid
+		 */
+		bool GetSphereCollisionParams(glm::vec3& center, float& radius) const;
+
+		/**
+		 * @brief Get collision plane parameters from object transform
+		 * @param[out] point Plane point position
+		 * @param[out] normal Plane normal (default Y-up)
+		 * @return true if plane object is valid
+		 */
+		bool GetPlaneCollisionParams(glm::vec3& point, glm::vec3& normal) const;
+
+		void SetClothMaterial(RS_Material::RSMaterial* material) { m_cloth_material = material; }
+
 	protected:
 		//********************************************************************************
 		// Cloth Data
@@ -444,8 +472,12 @@ namespace RS_Cloth
 		// Collision Objects
 		//********************************************************************************
 
-		RSCollisionSphere m_collision_sphere;
-		RSCollisionPlane m_collision_plane;
+		RS_Object::RSObject* m_collision_sphere_object = nullptr;  ///< Collision sphere object (found by name)
+		RS_Object::RSObject* m_collision_plane_object = nullptr;   ///< Collision plane object (found by name)
+
+		const std::string m_collision_sphere_name = "Cloth_Sphere";  ///< Name of collision sphere object
+		const std::string m_collision_plane_name = "Cloth_Plane";   ///< Name of collision plane object
+
 		bool b_use_sphere_collision = true;
 		bool b_use_plane_collision = true;
 
@@ -462,6 +494,13 @@ namespace RS_Cloth
 		//********************************************************************************
 
 		bool b_property_changed = true;   ///< Property changed flag
+
+		//********************************************************************************
+		// Cloth Materials
+		//********************************************************************************
+
+		RS_Material::RSMaterial* m_cloth_material = nullptr;  ///< Cloth material
+
 
 	private:
 		friend class RS_Handler::RSImguiHandler;  ///< Friend class for GUI access

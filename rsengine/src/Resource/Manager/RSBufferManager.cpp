@@ -615,7 +615,12 @@ namespace _RS_Internal
 		RSResourceManager::GetInstance()->GetShaderManager()->Use(RSShaderNames::POST_KERNEL_FILTER);
 		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::POST_KERNEL_FILTER, "input_texture", 0);
 
+		// Cloth simulation //u_cloth_texture
+		RSResourceManager::GetInstance()->GetShaderManager()->Use(RSShaderNames::CLOTH_RENDER);
+		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::CLOTH_RENDER, "u_cloth_texture", 0);
 
+		RSResourceManager::GetInstance()->GetShaderManager()->Use(RSShaderNames::DEFERRED_CLOTH_RENDER);
+		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::DEFERRED_CLOTH_RENDER, "u_cloth_texture", 0);
 
 
 

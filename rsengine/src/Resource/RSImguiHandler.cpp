@@ -1249,21 +1249,21 @@ namespace RS_Handler
     {
       // Sphere collision
       ImGui::Checkbox("Sphere Collision", &p_cloth->b_use_sphere_collision);
-      if (p_cloth->b_use_sphere_collision)
-      {
-        ImGui::InputFloat3("Sphere Center", glm::value_ptr(p_cloth->m_collision_sphere.center));
-        ImGui::SliderFloat("Sphere Radius", &p_cloth->m_collision_sphere.radius, 0.1f, 10.0f);
-      }
+      //if (p_cloth->b_use_sphere_collision)
+      //{
+      //  ImGui::InputFloat3("Sphere Center", glm::value_ptr(p_cloth->m_collision_sphere.center));
+      //  ImGui::SliderFloat("Sphere Radius", &p_cloth->m_collision_sphere.radius, 0.1f, 10.0f);
+      //}
 
       ImGui::Separator();
 
       // Plane collision
       ImGui::Checkbox("Plane Collision", &p_cloth->b_use_plane_collision);
-      if (p_cloth->b_use_plane_collision)
-      {
-        ImGui::InputFloat3("Plane Point", glm::value_ptr(p_cloth->m_collision_plane.point));
-        ImGui::InputFloat3("Plane Normal", glm::value_ptr(p_cloth->m_collision_plane.normal));
-      }
+      //if (p_cloth->b_use_plane_collision)
+      //{
+      //  ImGui::InputFloat3("Plane Point", glm::value_ptr(p_cloth->m_collision_plane.point));
+      //  ImGui::InputFloat3("Plane Normal", glm::value_ptr(p_cloth->m_collision_plane.normal));
+      //}
     }
 
     ImGui::Spacing();
