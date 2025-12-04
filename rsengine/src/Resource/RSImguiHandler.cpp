@@ -1273,7 +1273,7 @@ namespace RS_Handler
     //********************************************************************************
     if (ImGui::CollapsingHeader("Init Settings (Reset Required)"))
     {
-      ImGui::InputFloat3("Start Position", glm::value_ptr(p_cloth->m_init_setting.start_position));
+      ImGui::InputFloat3("Start Position", glm::value_ptr(p_cloth->m_init_setting.init_position));
       ImGui::InputInt("Width", &p_cloth->m_init_setting.width);
       ImGui::InputInt("Height", &p_cloth->m_init_setting.height);
       ImGui::SliderFloat("Spacing", &p_cloth->m_init_setting.spacing, 0.05f, 1.0f);

@@ -120,8 +120,9 @@ namespace RS_Cloth
 			return;
 
 		// Use Cloth Render shader
-		auto shader_manager = RSResourceManager::GetInstance()->GetShaderManager();
-		auto camera = RSResourceManager::GetInstance()->GetCamera();
+		auto resource_manager = RSResourceManager::GetInstance();
+		auto shader_manager = resource_manager->GetShaderManager();
+		auto camera = resource_manager->GetCamera();
 
 		shader_manager->Use(RS_PipelineList::RSShaderNames::CLOTH_RENDER);
 
@@ -132,16 +133,22 @@ namespace RS_Cloth
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "cloth_width", m_cloth_width);
 
 		// Set material properties
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_cloth_color", glm::vec3(0.8f, 0.2f, 0.2f));
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_roughness", 0.5f);
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_metallic", 0.0f);
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "cloth_color", glm::vec3(1.0f, 1.0f, 1.0f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "roughness", m_cloth_material->GetRoughness());
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "metallic", m_cloth_material->GetMetallic());
 
 		// Set lighting
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_light_pos", glm::vec3(10.0f, 20.0f, 10.0f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_light_pos", resource_manager->GetGraphicsData()->light_pos);
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_light_color", glm::vec3(1.0f, 1.0f, 1.0f));
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_view_pos", camera->GetPosition());
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_ambient_strength", 0.3f);
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_use_texture", false);
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "u_ambient_strength", m_cloth_material->GetAmbient());
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::CLOTH_RENDER, "b_use_texture", true);
+
+		// Apply material to shader
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_cloth_material->GetDiffuseMap());
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_cloth_material->GetNormalMap());
 
 		// Bind SSBOs for vertex shader
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_POSITION_BINDING, m_position_ssbo);
@@ -160,8 +167,9 @@ namespace RS_Cloth
 			return;
 
 		// Use Deferred Cloth Render shader
-		auto shader_manager = RSResourceManager::GetInstance()->GetShaderManager();
-		auto camera = RSResourceManager::GetInstance()->GetCamera();
+		auto resource_manager = RSResourceManager::GetInstance();
+		auto shader_manager = resource_manager->GetShaderManager();
+		auto camera = resource_manager->GetCamera();
 
 		shader_manager->Use(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER);
 
@@ -172,20 +180,22 @@ namespace RS_Cloth
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "cloth_width", m_cloth_width);
 
 		// Set material properties
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_cloth_color", glm::vec3(0.8f, 1.0f, 0.2f));
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_roughness", 0.5f);
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_metallic", 0.0f);
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "cloth_color", glm::vec3(1.0f, 1.0f, 1.0f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "roughness", m_cloth_material->GetRoughness());
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "metallic", m_cloth_material->GetMetallic());
 
 		// Set lighting (for G-Buffer, minimal lighting info needed)
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_light_pos", glm::vec3(10.0f, 20.0f, 10.0f));
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_light_pos", resource_manager->GetGraphicsData()->light_pos);
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_light_color", glm::vec3(1.0f, 1.0f, 1.0f));
 		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_view_pos", camera->GetPosition());
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_ambient_strength", 0.3f);
-		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_use_texture", true);
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "u_ambient_strength", m_cloth_material->GetAmbient());
+		shader_manager->SetData(RS_PipelineList::RSShaderNames::DEFERRED_CLOTH_RENDER, "b_use_texture", true);
 
 		// Apply material to shader
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_cloth_material->GetDiffuseMap());
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_cloth_material->GetNormalMap());
 
 		// Bind SSBOs for vertex shader
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_POSITION_BINDING, m_position_ssbo);
@@ -216,7 +226,15 @@ namespace RS_Cloth
 		m_particles.clear();
 		m_particles.resize(m_particle_count);
 
-		const glm::vec3 start_pos = m_init_setting.start_position;
+		// Calculate the offset to center the cloth at init_position
+		const glm::vec3 center_pos = m_init_setting.init_position;
+		const float half_width = (width - 1) * spacing * 0.5f;
+		const float half_height = (height - 1) * spacing * 0.5f;
+		const glm::vec3 start_pos = glm::vec3(
+			center_pos.x - half_width,
+			center_pos.y,
+			center_pos.z - half_height
+		);
 
 		for (int y = 0; y < height; ++y)
 		{
@@ -759,7 +777,7 @@ namespace RS_Cloth
 			{
 				glm::vec3 sphere_center = m_collision_sphere_object->GetTransform()->GetPosition();
 				glm::vec3 sphere_scale = m_collision_sphere_object->GetTransform()->GetScale();
-				float sphere_radius = sphere_scale.x;  // Assume uniform scale for sphere
+				float sphere_radius = sphere_scale.x / 2.0f;  // Assume uniform scale for sphere
 				
 				for (unsigned int i = 0; i < m_particle_count; ++i)
 				{

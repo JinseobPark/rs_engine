@@ -143,7 +143,7 @@ struct RSClothProperty
  */
 struct RSClothInitSetting
 {
-	glm::vec3 start_position = glm::vec3(-5.0f, 10.0f, -5.0f);  ///< Top-left corner position
+	glm::vec3 init_position = glm::vec3(-5.0f, 10.0f, -5.0f);  ///< Top-left corner position
 	int width = 32;              ///< Number of particles in width
 	int height = 32;             ///< Number of particles in height
 	float spacing = 0.3f;        ///< Space between particles

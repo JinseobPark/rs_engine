@@ -26,9 +26,9 @@ in VS_OUT {
 //********************************************************************************
 
 // Material
-uniform vec3 u_cloth_color;
-uniform float u_roughness;
-uniform float u_metallic;
+uniform vec3 cloth_color;
+uniform float roughness;
+uniform float metallic;
 
 // Lighting
 uniform vec3 u_light_pos;
@@ -37,8 +37,9 @@ uniform vec3 u_view_pos;
 uniform float u_ambient_strength;
 
 // Optional texture
-uniform bool u_use_texture;
-uniform sampler2D u_cloth_texture;
+uniform bool b_use_texture;
+uniform sampler2D diffuse_texture;
+uniform sampler2D normal_texture;
 
 //********************************************************************************
 // Outputs
@@ -56,6 +57,38 @@ layout (location = 2) out vec4 gAlbedoSpec;
 //********************************************************************************
 
 const float PI = 3.14159265359;
+
+//********************************************************************************
+// Normal Mapping Functions
+//********************************************************************************
+
+// Get normal from normal map using screen-space derivatives (DMaterialPbr style)
+vec3 GetNormalFromMap(vec2 texcoord)
+{
+    // Sample normal map and convert from [0,1] to [-1,1]
+    vec3 tangent_normal = texture(normal_texture, texcoord).xyz * 2.0 - 1.0;
+    
+    // Get edge vectors of the pixel triangle
+    vec3 Q1 = dFdx(fs_in.frag_pos);
+    vec3 Q2 = dFdy(fs_in.frag_pos);
+    vec2 st1 = dFdx(texcoord);
+    vec2 st2 = dFdy(texcoord);
+    
+    // Check for degenerate UV derivatives
+    float det = st1.s * st2.t - st2.s * st1.t;
+    float epsilon = 0.000001;
+    if (abs(det) < epsilon) {
+        return normalize(fs_in.normal);
+    }
+    
+    // Build TBN matrix
+    vec3 N = normalize(fs_in.normal);
+    vec3 T = normalize(Q1 * st2.t - Q2 * st1.t);
+    vec3 B = normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
+    
+    return normalize(TBN * tangent_normal);
+}
 
 //********************************************************************************
 // PBR Functions
@@ -107,28 +140,41 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 void main()
 {
     // Get base color
-    vec3 albedo = u_cloth_color;
-    if (u_use_texture)
+    vec3 albedo = cloth_color;
+    if (b_use_texture)
     {
-        albedo *= texture(u_cloth_texture, fs_in.tex_coord).rgb;
+        albedo *= texture(diffuse_texture, fs_in.tex_coord).rgb;
     }
     
-    // Normal (double-sided)
-    vec3 N = normalize(fs_in.normal);
+    // Normal calculation
+    vec3 N;
+    if (b_use_texture)
+    {
+        // Use normal map
+        N = GetNormalFromMap(fs_in.tex_coord);
+    }
+    else
+    {
+        // Use geometric normal
+        N = normalize(fs_in.normal);
+    }
+    
+    // Double-sided support
     if (!gl_FrontFacing)
         N = -N;
     
     vec3 V = normalize(u_view_pos - fs_in.frag_pos);
+    
     vec3 L = normalize(u_light_pos - fs_in.frag_pos);
     vec3 H = normalize(V + L);
     
     // Calculate reflectance at normal incidence
     vec3 F0 = vec3(0.04);  // Dielectric
-    F0 = mix(F0, albedo, u_metallic);
+    F0 = mix(F0, albedo, metallic);
     
     // Cook-Torrance BRDF
-    float NDF = DistributionGGX(N, H, u_roughness);
-    float G = GeometrySmith(N, V, L, u_roughness);
+    float NDF = DistributionGGX(N, H, roughness);
+    float G = GeometrySmith(N, V, L, roughness);
     vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
     
     vec3 numerator = NDF * G * F;
@@ -138,7 +184,7 @@ void main()
     // Energy conservation
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - u_metallic;
+    kD *= 1.0 - metallic;
     
     // Final radiance
     float NdotL = max(dot(N, L), 0.0);
@@ -158,7 +204,7 @@ void main()
     FragColor = vec4(color, 1.0);
     
     // G-Buffer output for deferred rendering
-    gPosition = vec4(fs_in.frag_pos, 1.0);
-    gNormal = vec4(N, 0.0);
-    gAlbedoSpec = vec4(albedo, u_roughness);
+    gPosition = vec4(fs_in.frag_pos, metallic);
+    gNormal = vec4(N, roughness);
+    gAlbedoSpec = vec4(albedo, u_ambient_strength);
 }

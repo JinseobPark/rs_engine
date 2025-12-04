@@ -617,10 +617,12 @@ namespace _RS_Internal
 
 		// Cloth simulation //u_cloth_texture
 		RSResourceManager::GetInstance()->GetShaderManager()->Use(RSShaderNames::CLOTH_RENDER);
-		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::CLOTH_RENDER, "u_cloth_texture", 0);
+		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::CLOTH_RENDER, "diffuse_texture", 0);
+		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::CLOTH_RENDER, "normal_texture", 1);
 
 		RSResourceManager::GetInstance()->GetShaderManager()->Use(RSShaderNames::DEFERRED_CLOTH_RENDER);
-		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::DEFERRED_CLOTH_RENDER, "u_cloth_texture", 0);
+		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::DEFERRED_CLOTH_RENDER, "diffuse_texture", 0);
+		RSResourceManager::GetInstance()->GetShaderManager()->SetData(RSShaderNames::DEFERRED_CLOTH_RENDER, "normal_texture", 1);
 
 
 
