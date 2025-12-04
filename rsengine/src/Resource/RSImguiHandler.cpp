@@ -1219,7 +1219,7 @@ namespace RS_Handler
       // PBD specific
       if (p_cloth->GetSolverType() == RSClothSolverType::PBD)
       {
-        if (ImGui::SliderInt("Solver Iterations", &p_cloth->m_cloth_property.solver_iterations, 1, 50))
+        if (ImGui::SliderInt("Solver Iterations", &p_cloth->m_cloth_property.solver_iterations, 1, 500))
           p_cloth->b_property_changed = true;
       }
     }

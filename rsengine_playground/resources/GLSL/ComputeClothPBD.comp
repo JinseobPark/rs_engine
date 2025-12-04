@@ -7,7 +7,7 @@
 
 Compute shader for Position Based Dynamics cloth simulation.
 Solves distance constraints using Jacobi iteration with atomic operations.
-Uses fixed-point arithmetic for atomic float operations.
+Each spring calculates correction and atomically adds to particle positions.
 
 */
 /******************************************************************************/
@@ -19,13 +19,12 @@ layout (local_size_x = 256) in;
 //********************************************************************************
 
 layout (std430, binding = 15) buffer PredictedBuffer {
-    vec4 predicted_positions[];  // xyz: predicted position, w: unused
+    vec4 predicted_positions[];  // xyz: predicted position, w: correction count
 };
 
-// Correction accumulator buffer (integer for atomic operations)
-// Using fixed-point: multiply float by FIXED_SCALE, convert to int
+// Correction accumulator buffer (for Jacobi iteration)
 layout (std430, binding = 16) buffer CorrectionBuffer {
-    ivec4 corrections[];  // xyz: accumulated correction (fixed-point), w: correction count
+    vec4 corrections[];  // xyz: accumulated correction, w: correction count
 };
 
 struct Spring {
@@ -51,15 +50,6 @@ layout (std430, binding = 10) readonly buffer PositionBuffer {
 uniform uint spring_count;
 uniform float compliance;  // XPBD compliance (0 = infinitely stiff)
 uniform float dt;
-
-// Fixed-point scale factor (10000 provides good precision for typical cloth scales)
-const float FIXED_SCALE = 10000.0;
-
-// Convert float to fixed-point int
-int floatToFixed(float f)
-{
-    return int(f * FIXED_SCALE);
-}
 
 void main()
 {
@@ -101,20 +91,21 @@ void main()
     vec3 corr1 = -w1 * delta_lambda * gradient;
     vec3 corr2 = w2 * delta_lambda * gradient;
     
-    // Atomically accumulate corrections using fixed-point integers
+    // Atomically accumulate corrections
+    // Using atomicAdd for each component
     if (w1 > 0.0)
     {
-        atomicAdd(corrections[s.p1].x, floatToFixed(corr1.x));
-        atomicAdd(corrections[s.p1].y, floatToFixed(corr1.y));
-        atomicAdd(corrections[s.p1].z, floatToFixed(corr1.z));
-        atomicAdd(corrections[s.p1].w, 1);  // Count corrections
+        atomicAdd(corrections[s.p1].x, corr1.x);
+        atomicAdd(corrections[s.p1].y, corr1.y);
+        atomicAdd(corrections[s.p1].z, corr1.z);
+        atomicAdd(corrections[s.p1].w, 1.0);  // Count corrections
     }
     if (w2 > 0.0)
     {
-        atomicAdd(corrections[s.p2].x, floatToFixed(corr2.x));
-        atomicAdd(corrections[s.p2].y, floatToFixed(corr2.y));
-        atomicAdd(corrections[s.p2].z, floatToFixed(corr2.z));
-        atomicAdd(corrections[s.p2].w, 1);  // Count corrections
+        atomicAdd(corrections[s.p2].x, corr2.x);
+        atomicAdd(corrections[s.p2].y, corr2.y);
+        atomicAdd(corrections[s.p2].z, corr2.z);
+        atomicAdd(corrections[s.p2].w, 1.0);  // Count corrections
     }
 }
 

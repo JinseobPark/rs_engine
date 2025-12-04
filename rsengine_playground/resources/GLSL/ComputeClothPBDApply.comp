@@ -1,0 +1,66 @@
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothPBDApply.comp
+\author Jinseob Park
+\date   2025/12/04
+
+Compute shader for PBD cloth simulation - Apply Corrections.
+Applies accumulated Jacobi corrections and resets correction buffer.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 15) buffer PredictedBuffer {
+    vec4 predicted_positions[];  // xyz: predicted position, w: unused
+};
+
+layout (std430, binding = 16) buffer CorrectionBuffer {
+    vec4 corrections[];  // xyz: accumulated correction, w: correction count
+};
+
+layout (std430, binding = 10) readonly buffer PositionBuffer {
+    vec4 positions[];  // w: inverse mass
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    float inv_mass = positions[gid].w;
+    
+    // Skip fixed particles
+    if (inv_mass <= 0.0)
+    {
+        corrections[gid] = vec4(0.0);
+        return;
+    }
+    
+    vec4 corr = corrections[gid];
+    float count = corr.w;
+    
+    if (count > 0.0)
+    {
+        // Apply averaged correction (Jacobi)
+        vec3 avg_correction = corr.xyz / count;
+        predicted_positions[gid].xyz += avg_correction;
+    }
+    
+    // Reset correction buffer for next iteration
+    corrections[gid] = vec4(0.0);
+}

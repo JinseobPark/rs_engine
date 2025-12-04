@@ -1,0 +1,77 @@
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothPBDPredict.comp
+\author Jinseob Park
+\date   2025/12/04
+
+Compute shader for PBD cloth simulation - Position Prediction.
+Predicts new positions using explicit Euler integration with external forces.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+layout (std430, binding = 15) buffer PredictedBuffer {
+    vec4 predicted_positions[];  // xyz: predicted position, w: unused
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+uniform float dt;
+uniform float damping;
+uniform vec3 gravity;
+uniform vec3 wind_direction;
+uniform float wind_strength;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    vec4 pos = positions[gid];
+    float inv_mass = pos.w;
+    
+    // Fixed particles: just copy position
+    if (inv_mass <= 0.0)
+    {
+        predicted_positions[gid] = vec4(pos.xyz, 0.0);
+        return;
+    }
+    
+    vec3 current = pos.xyz;
+    vec3 prev = prev_positions[gid].xyz;
+    
+    // Calculate velocity from Verlet (current - prev)
+    vec3 velocity = (current - prev) * damping;
+    
+    // External forces
+    vec3 acceleration = gravity;
+    if (wind_strength > 0.0)
+    {
+        acceleration += wind_direction * wind_strength;
+    }
+    
+    // Predict position: p_new = p + v + a * dt^2
+    vec3 predicted = current + velocity + acceleration * dt * dt;
+    
+    predicted_positions[gid] = vec4(predicted, 0.0);
+}

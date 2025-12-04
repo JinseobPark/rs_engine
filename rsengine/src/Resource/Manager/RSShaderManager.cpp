@@ -164,6 +164,20 @@ namespace RS_Shader
     const auto sph_dynamic_bt_post_compute_shader = new ComputeShader(DynamicComputePost_cs, false);
     comp_shaders_map_[RSComputeShaderNames::SPH_DYNAMIC_BT_POST] = sph_dynamic_bt_post_compute_shader;
 
+    // Cloth Simulation Compute Shaders
+    const auto cloth_pbd_predict = new ComputeShader(ComputeClothPBDPredict_cs, false);
+    comp_shaders_map_[RSComputeShaderNames::CLOTH_PBD_PREDICT] = cloth_pbd_predict;
+    const auto cloth_pbd_constraint = new ComputeShader(ComputeClothPBD_cs, false);
+    comp_shaders_map_[RSComputeShaderNames::CLOTH_PBD_CONSTRAINT] = cloth_pbd_constraint;
+    const auto cloth_pbd_apply = new ComputeShader(ComputeClothPBDApply_cs, false);
+    comp_shaders_map_[RSComputeShaderNames::CLOTH_PBD_APPLY] = cloth_pbd_apply;
+    const auto cloth_pbd_update = new ComputeShader(ComputeClothPBDUpdate_cs, false);
+    comp_shaders_map_[RSComputeShaderNames::CLOTH_PBD_UPDATE] = cloth_pbd_update;
+    const auto cloth_collision = new ComputeShader(ComputeClothCollision_cs, false);
+    comp_shaders_map_[RSComputeShaderNames::CLOTH_COLLISION] = cloth_collision;
+    const auto cloth_normal = new ComputeShader(ComputeClothNormal_cs, false);
+    comp_shaders_map_[RSComputeShaderNames::CLOTH_NORMAL] = cloth_normal;
+
 #if 0
 		/****************************** Default RSShader  ******************************/
 		const auto default_shader = new RSShader("resources\\GLSL\\default.vert", "resources\\GLSL\\default.frag");

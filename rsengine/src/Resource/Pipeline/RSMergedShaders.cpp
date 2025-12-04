@@ -311,7 +311,7 @@ const char* ComputeClothCollision_cs = R"(
 \date   2025/11/30
 
 Compute shader for cloth collision detection and response.
-Handles sphere and plane collisions.
+Handles sphere and plane collisions on predicted positions (for PBD).
 
 */
 /******************************************************************************/
@@ -322,12 +322,12 @@ layout (local_size_x = 256) in;
 // SSBO Bindings
 //********************************************************************************
 
-layout (std430, binding = 10) buffer PositionBuffer {
+layout (std430, binding = 10) readonly buffer PositionBuffer {
     vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
 };
 
-layout (std430, binding = 11) buffer PrevPositionBuffer {
-    vec4 prev_positions[];  // xyz: previous position, w: unused
+layout (std430, binding = 15) buffer PredictedBuffer {
+    vec4 predicted_positions[];  // xyz: predicted position, w: unused
 };
 
 //********************************************************************************
@@ -354,14 +354,13 @@ void main()
     if (gid >= particle_count)
         return;
     
-    vec4 pos = positions[gid];
-    float inv_mass = pos.w;
+    float inv_mass = positions[gid].w;
     
     // Skip fixed particles
     if (inv_mass <= 0.0)
         return;
     
-    vec3 p = pos.xyz;
+    vec3 p = predicted_positions[gid].xyz;
     
     // Sphere collision
     if (use_sphere_collision)
@@ -389,7 +388,7 @@ void main()
         }
     }
     
-    positions[gid].xyz = p;
+    predicted_positions[gid].xyz = p;
 }
 
 
@@ -746,7 +745,232 @@ const char* ComputeClothPBD_cs = R"(
 \date   2025/11/30
 
 Compute shader for Position Based Dynamics cloth simulation.
-Solves distance constraints using Gauss-Seidel iteration.
+Solves distance constraints using Jacobi iteration with atomic operations.
+Uses fixed-point arithmetic for atomic float operations.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 15) buffer PredictedBuffer {
+    vec4 predicted_positions[];  // xyz: predicted position, w: unused
+};
+
+// Correction accumulator buffer (integer for atomic operations)
+// Using fixed-point: multiply float by FIXED_SCALE, convert to int
+layout (std430, binding = 16) buffer CorrectionBuffer {
+    ivec4 corrections[];  // xyz: accumulated correction (fixed-point), w: correction count
+};
+
+struct Spring {
+    int p1;
+    int p2;
+    float rest_length;
+    float stiffness;
+};
+
+layout (std430, binding = 13) buffer SpringBuffer {
+    Spring springs[];
+};
+
+// Inverse mass buffer (read from positions buffer)
+layout (std430, binding = 10) readonly buffer PositionBuffer {
+    vec4 positions[];  // w: inverse mass
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint spring_count;
+uniform float compliance;  // XPBD compliance (0 = infinitely stiff)
+uniform float dt;
+
+// Fixed-point scale factor (10000 provides good precision for typical cloth scales)
+const float FIXED_SCALE = 10000.0;
+
+// Convert float to fixed-point int
+int floatToFixed(float f)
+{
+    return int(f * FIXED_SCALE);
+}
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= spring_count)
+        return;
+    
+    Spring s = springs[gid];
+    
+    float w1 = positions[s.p1].w;  // inverse mass from original positions
+    float w2 = positions[s.p2].w;
+    float w_sum = w1 + w2;
+    
+    if (w_sum < 0.0001)
+        return;  // Both particles fixed
+    
+    vec3 p1 = predicted_positions[s.p1].xyz;
+    vec3 p2 = predicted_positions[s.p2].xyz;
+    
+    vec3 delta = p2 - p1;
+    float current_length = length(delta);
+    
+    if (current_length < 0.0001)
+        return;
+    
+    // Distance constraint: C = |p2 - p1| - rest_length = 0
+    float C = current_length - s.rest_length;
+    
+    // XPBD correction with compliance
+    // alpha = compliance / dt^2
+    // delta_lambda = -C / (w1 + w2 + alpha)
+    float alpha = compliance / (dt * dt + 0.0001);
+    float delta_lambda = -C / (w_sum + alpha);
+    
+    vec3 gradient = delta / current_length;
+    
+    // Calculate corrections for each particle
+    vec3 corr1 = -w1 * delta_lambda * gradient;
+    vec3 corr2 = w2 * delta_lambda * gradient;
+    
+    // Atomically accumulate corrections using fixed-point integers
+    if (w1 > 0.0)
+    {
+        atomicAdd(corrections[s.p1].x, floatToFixed(corr1.x));
+        atomicAdd(corrections[s.p1].y, floatToFixed(corr1.y));
+        atomicAdd(corrections[s.p1].z, floatToFixed(corr1.z));
+        atomicAdd(corrections[s.p1].w, 1);  // Count corrections
+    }
+    if (w2 > 0.0)
+    {
+        atomicAdd(corrections[s.p2].x, floatToFixed(corr2.x));
+        atomicAdd(corrections[s.p2].y, floatToFixed(corr2.y));
+        atomicAdd(corrections[s.p2].z, floatToFixed(corr2.z));
+        atomicAdd(corrections[s.p2].w, 1);  // Count corrections
+    }
+}
+
+
+
+)";
+
+
+
+
+
+/**************************** ComputeClothPBDApply ****************************/
+
+
+const char* ComputeClothPBDApply_cs = R"(
+
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothPBDApply.comp
+\author Jinseob Park
+\date   2025/12/04
+
+Compute shader for PBD cloth simulation - Apply Corrections.
+Reads fixed-point corrections and applies to predicted positions.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 15) buffer PredictedBuffer {
+    vec4 predicted_positions[];  // xyz: predicted position, w: unused
+};
+
+// Correction buffer (integer fixed-point)
+layout (std430, binding = 16) buffer CorrectionBuffer {
+    ivec4 corrections[];  // xyz: accumulated correction (fixed-point), w: count
+};
+
+layout (std430, binding = 10) readonly buffer PositionBuffer {
+    vec4 positions[];  // w: inverse mass
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+
+// Fixed-point scale factor (must match ComputeClothPBD.comp)
+const float INV_FIXED_SCALE = 1.0 / 10000.0;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    float inv_mass = positions[gid].w;
+    
+    // Skip fixed particles
+    if (inv_mass < 0.0001)
+    {
+        corrections[gid] = ivec4(0);
+        return;
+    }
+    
+    ivec4 corr = corrections[gid];
+    int count = corr.w;
+    
+    if (count > 0)
+    {
+        // Convert from fixed-point back to float
+        vec3 correction = vec3(
+            float(corr.x) * INV_FIXED_SCALE,
+            float(corr.y) * INV_FIXED_SCALE,
+            float(corr.z) * INV_FIXED_SCALE
+        );
+        
+        // Average the corrections (Jacobi)
+        correction = correction / float(count);
+        
+        // Apply correction to predicted position
+        predicted_positions[gid].xyz += correction;
+    }
+    
+    // Reset correction buffer for next iteration
+    corrections[gid] = ivec4(0);
+}
+
+
+)";
+
+
+
+
+
+/*************************** ComputeClothPBDPredict ***************************/
+
+
+const char* ComputeClothPBDPredict_cs = R"(
+
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothPBDPredict.comp
+\author Jinseob Park
+\date   2025/12/04
+
+Compute shader for PBD cloth simulation - Position Prediction.
+Predicts new positions using explicit Euler integration with external forces.
 
 */
 /******************************************************************************/
@@ -765,74 +989,137 @@ layout (std430, binding = 11) buffer PrevPositionBuffer {
     vec4 prev_positions[];  // xyz: previous position, w: unused
 };
 
-struct Spring {
-    int p1;
-    int p2;
-    float rest_length;
-    float stiffness;
-};
-
-layout (std430, binding = 13) buffer SpringBuffer {
-    Spring springs[];
+layout (std430, binding = 15) buffer PredictedBuffer {
+    vec4 predicted_positions[];  // xyz: predicted position, w: unused
 };
 
 //********************************************************************************
 // Uniforms
 //********************************************************************************
 
-uniform uint spring_count;
-uniform float compliance;  // XPBD compliance (0 = infinitely stiff)
+uniform uint particle_count;
+uniform float dt;
+uniform float damping;
+uniform vec3 gravity;
+uniform vec3 wind_direction;
+uniform float wind_strength;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    vec4 pos = positions[gid];
+    float inv_mass = pos.w;
+    
+    // Fixed particles: just copy position
+    if (inv_mass <= 0.0)
+    {
+        predicted_positions[gid] = vec4(pos.xyz, 0.0);
+        return;
+    }
+    
+    vec3 current = pos.xyz;
+    vec3 prev = prev_positions[gid].xyz;
+    
+    // Calculate velocity from Verlet (current - prev)
+    vec3 velocity = (current - prev) * damping;
+    
+    // External forces
+    vec3 acceleration = gravity;
+    if (wind_strength > 0.0)
+    {
+        acceleration += wind_direction * wind_strength;
+    }
+    
+    // Predict position: p_new = p + v + a * dt^2
+    vec3 predicted = current + velocity + acceleration * dt * dt;
+    
+    predicted_positions[gid] = vec4(predicted, 0.0);
+}
+
+
+)";
+
+
+
+
+
+/*************************** ComputeClothPBDUpdate ****************************/
+
+
+const char* ComputeClothPBDUpdate_cs = R"(
+
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothPBDUpdate.comp
+\author Jinseob Park
+\date   2025/12/04
+
+Compute shader for PBD cloth simulation - Velocity Update.
+Updates velocities and stores previous positions after constraint solving.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+layout (std430, binding = 12) buffer VelocityBuffer {
+    vec4 velocities[];  // xyz: velocity, w: unused
+};
+
+layout (std430, binding = 15) buffer PredictedBuffer {
+    vec4 predicted_positions[];  // xyz: predicted position (after constraints), w: unused
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
 uniform float dt;
 
 void main()
 {
     uint gid = gl_GlobalInvocationID.x;
     
-    if (gid >= spring_count)
+    if (gid >= particle_count)
         return;
     
-    Spring s = springs[gid];
+    vec4 pos = positions[gid];
+    float inv_mass = pos.w;
     
-    vec4 pos1 = positions[s.p1];
-    vec4 pos2 = positions[s.p2];
-    
-    float w1 = pos1.w;  // inverse mass
-    float w2 = pos2.w;
-    float w_sum = w1 + w2;
-    
-    if (w_sum < 0.0001)
-        return;  // Both particles fixed
-    
-    vec3 p1 = pos1.xyz;
-    vec3 p2 = pos2.xyz;
-    
-    vec3 delta = p2 - p1;
-    float current_length = length(delta);
-    
-    if (current_length < 0.0001)
+    // Skip fixed particles
+    if (inv_mass <= 0.0)
         return;
     
-    // Distance constraint: C = |p2 - p1| - rest_length = 0
-    float C = current_length - s.rest_length;
+    vec3 old_pos = pos.xyz;
+    vec3 new_pos = predicted_positions[gid].xyz;
     
-    // XPBD correction with compliance
-    // alpha = compliance / dt^2
-    // delta_lambda = -C / (w1 + w2 + alpha)
-    float alpha = compliance / (dt * dt);
-    float delta_lambda = -C / (w_sum + alpha);
+    // Update velocity: v = (new_pos - old_pos) / dt
+    vec3 velocity = (new_pos - old_pos) / dt;
+    velocities[gid] = vec4(velocity, 0.0);
     
-    vec3 gradient = delta / current_length;
-    vec3 correction = delta_lambda * gradient;
+    // Store previous position
+    prev_positions[gid] = vec4(old_pos, 0.0);
     
-    // Apply corrections
-    if (w1 > 0.0)
-    {
-        positions[s.p1].xyz = p1 - w1 * correction;
-    }
-    if (w2 > 0.0)
-    {
-        positions[s.p2].xyz = p2 + w2 * correction;
-    }
+    // Update current position
+    positions[gid] = vec4(new_pos, inv_mass);
 }
 
 

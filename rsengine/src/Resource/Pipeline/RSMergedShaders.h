@@ -26,6 +26,12 @@ extern const char* ComputeClothNormal_cs;
 
 extern const char* ComputeClothPBD_cs;
 
+extern const char* ComputeClothPBDApply_cs;
+
+extern const char* ComputeClothPBDPredict_cs;
+
+extern const char* ComputeClothPBDUpdate_cs;
+
 extern const char* ComputeCMUDensity_cs;
 
 extern const char* ComputeCMUForce_cs;

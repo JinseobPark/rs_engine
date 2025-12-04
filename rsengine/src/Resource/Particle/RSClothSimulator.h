@@ -24,14 +24,21 @@ namespace RS_Material
 
 //********************************************************************************
 // SSBO Binding Constants for Cloth Simulation
-// SPH uses binding 0-6, Cloth uses binding 10-15 to avoid conflicts
+// SPH uses binding 0-6, Cloth uses binding 10-16 to avoid conflicts
 //********************************************************************************
 constexpr int CLOTH_POSITION_BINDING      = 10;  ///< Current position buffer
 constexpr int CLOTH_PREV_POSITION_BINDING = 11;  ///< Previous position buffer (for Verlet)
 constexpr int CLOTH_VELOCITY_BINDING      = 12;  ///< Velocity buffer
 constexpr int CLOTH_SPRING_BINDING        = 13;  ///< Spring constraints buffer
 constexpr int CLOTH_NORMAL_BINDING        = 14;  ///< Normal buffer for rendering
+constexpr int CLOTH_PREDICTED_BINDING     = 15;  ///< Predicted position buffer (for PBD)
+constexpr int CLOTH_CORRECTION_BINDING    = 16;  ///< Correction buffer (for Jacobi PBD)
 constexpr int CLOTH_COLLISION_BINDING     = 5;   ///< Shared with SPH collision mesh
+
+//********************************************************************************
+// Compute Shader Workgroup Size
+//********************************************************************************
+constexpr int CLOTH_WORKGROUP_SIZE = 256;  ///< Local workgroup size for cloth compute shaders
 
 /**
  * @brief GUI Handler namespace
@@ -134,7 +141,7 @@ struct RSClothProperty
 	float collision_stiffness = 100.0f;   ///< Collision response stiffness
 
 	// PBD specific
-	int solver_iterations = 10;           ///< Constraint solver iterations
+	int solver_iterations = 20;           ///< Constraint solver iterations
 	float compliance = 0.0f;              ///< XPBD compliance (0 = stiff)
 };
 
@@ -143,7 +150,7 @@ struct RSClothProperty
  */
 struct RSClothInitSetting
 {
-	glm::vec3 init_position = glm::vec3(-5.0f, 10.0f, -5.0f);  ///< Top-left corner position
+	glm::vec3 init_position = glm::vec3(0.0f, 10.0f, 0.0f);  ///< Top-left corner position
 	int width = 32;              ///< Number of particles in width
 	int height = 32;             ///< Number of particles in height
 	float spacing = 0.3f;        ///< Space between particles
@@ -379,6 +386,22 @@ namespace RS_Cloth
 		void CPUSimulatePBD(float dt);
 
 		/**
+		 * @brief GPU compute shader PBD simulation
+		 * @param dt delta time
+		 */
+		void GPUComputePBD(float dt);
+
+		/**
+		 * @brief GPU compute shader normal calculation
+		 */
+		void GPUCalculateNormals();
+
+		/**
+		 * @brief CPU fallback for normal calculation
+		 */
+		void CPUCalculateNormals();
+
+		/**
 		 * @brief Transfer particle data to GPU
 		 */
 		void TransferParticleDataToGPU();
@@ -447,6 +470,8 @@ namespace RS_Cloth
 		GLuint m_velocity_ssbo = 0;       ///< Velocity buffer (binding 12)
 		GLuint m_spring_ssbo = 0;         ///< Spring constraints buffer (binding 13)
 		GLuint m_normal_ssbo = 0;         ///< Normal buffer (binding 14)
+		GLuint m_predicted_ssbo = 0;      ///< Predicted position buffer for PBD (binding 15)
+		GLuint m_correction_ssbo = 0;     ///< Correction buffer for Jacobi PBD (binding 16)
 
 		//********************************************************************************
 		// Rendering Resources

@@ -1,0 +1,69 @@
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothPBDUpdate.comp
+\author Jinseob Park
+\date   2025/12/04
+
+Compute shader for PBD cloth simulation - Velocity Update.
+Updates velocities and stores previous positions after constraint solving.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+layout (std430, binding = 12) buffer VelocityBuffer {
+    vec4 velocities[];  // xyz: velocity, w: unused
+};
+
+layout (std430, binding = 15) buffer PredictedBuffer {
+    vec4 predicted_positions[];  // xyz: predicted position (after constraints), w: unused
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+uniform float dt;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    vec4 pos = positions[gid];
+    float inv_mass = pos.w;
+    
+    // Skip fixed particles
+    if (inv_mass <= 0.0)
+        return;
+    
+    vec3 old_pos = pos.xyz;
+    vec3 new_pos = predicted_positions[gid].xyz;
+    
+    // Update velocity: v = (new_pos - old_pos) / dt
+    vec3 velocity = (new_pos - old_pos) / dt;
+    velocities[gid] = vec4(velocity, 0.0);
+    
+    // Store previous position
+    prev_positions[gid] = vec4(old_pos, 0.0);
+    
+    // Update current position
+    positions[gid] = vec4(new_pos, inv_mass);
+}

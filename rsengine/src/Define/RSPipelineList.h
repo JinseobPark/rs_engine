@@ -97,6 +97,14 @@ enum class RSComputeShaderNames : int
   SPH_DYNAMIC_BT_FORCE,
   SPH_DYNAMIC_BT_POST,
 
+  // Cloth Simulation Compute Shaders
+  CLOTH_PBD_PREDICT,     ///< PBD: Predict positions with external forces
+  CLOTH_PBD_CONSTRAINT,  ///< PBD: Solve distance constraints (Jacobi iteration)
+  CLOTH_PBD_APPLY,       ///< PBD: Apply Jacobi corrections
+  CLOTH_PBD_UPDATE,      ///< PBD: Update velocities and previous positions
+  CLOTH_COLLISION,       ///< Collision detection and response
+  CLOTH_NORMAL,          ///< Calculate normals for rendering
+
 };
 
 /**

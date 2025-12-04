@@ -1,0 +1,119 @@
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothForce.comp
+\author Jinseob Park
+\date   2025/11/30
+
+Compute shader for cloth spring force calculation.
+Mass-Spring model: calculates spring forces for all constraints.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings (Cloth uses 10-14 to avoid conflict with SPH 0-6)
+//********************************************************************************
+
+layout (std430, binding = 10) buffer PositionBuffer {
+    vec4 positions[];  // xyz: position, w: inverse mass (0 = fixed)
+};
+
+layout (std430, binding = 11) buffer PrevPositionBuffer {
+    vec4 prev_positions[];  // xyz: previous position, w: unused
+};
+
+layout (std430, binding = 12) buffer VelocityBuffer {
+    vec4 velocities[];  // xyz: velocity, w: unused
+};
+
+struct Spring {
+    int p1;           // First particle index
+    int p2;           // Second particle index
+    float rest_length;// Rest length
+    float stiffness;  // Spring stiffness
+};
+
+layout (std430, binding = 13) buffer SpringBuffer {
+    Spring springs[];
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+uniform uint spring_count;
+uniform float dt;
+uniform float damping;
+uniform vec3 gravity;
+uniform vec3 wind_direction;
+uniform float wind_strength;
+
+// Temporary force accumulator (could use atomic operations or reduction)
+layout (std430, binding = 15) buffer ForceBuffer {
+    vec4 forces[];  // xyz: accumulated force, w: unused
+};
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    // Initialize forces with external forces (gravity + wind)
+    if (gid < particle_count)
+    {
+        vec4 pos = positions[gid];
+        float inv_mass = pos.w;
+        
+        if (inv_mass > 0.0)  // Not fixed
+        {
+            vec3 external_force = gravity + wind_direction * wind_strength;
+            forces[gid] = vec4(external_force, 0.0);
+        }
+        else
+        {
+            forces[gid] = vec4(0.0);
+        }
+    }
+    
+    barrier();
+    memoryBarrierBuffer();
+    
+    // Calculate spring forces
+    // Note: This is a simplified version. For production, use atomic operations
+    // or a separate pass with proper synchronization
+    if (gid < spring_count)
+    {
+        Spring s = springs[gid];
+        
+        vec3 p1 = positions[s.p1].xyz;
+        vec3 p2 = positions[s.p2].xyz;
+        
+        vec3 delta = p2 - p1;
+        float current_length = length(delta);
+        
+        if (current_length > 0.0001)
+        {
+            vec3 direction = delta / current_length;
+            float displacement = current_length - s.rest_length;
+            vec3 force = s.stiffness * displacement * direction;
+            
+            // Apply forces (need atomic for correctness, simplified here)
+            float w1 = positions[s.p1].w;
+            float w2 = positions[s.p2].w;
+            
+            if (w1 > 0.0)
+            {
+                // atomicAdd equivalent for vec3 would be needed
+                // For now, this is a demonstration structure
+                forces[s.p1].xyz += force;
+            }
+            if (w2 > 0.0)
+            {
+                forces[s.p2].xyz -= force;
+            }
+        }
+    }
+}

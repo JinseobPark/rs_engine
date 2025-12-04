@@ -1,0 +1,79 @@
+#version 460 core
+/******************************************************************************/
+/*!
+\file   ComputeClothPBDApply.comp
+\author Jinseob Park
+\date   2025/12/04
+
+Compute shader for PBD cloth simulation - Apply Corrections.
+Reads fixed-point corrections and applies to predicted positions.
+
+*/
+/******************************************************************************/
+
+layout (local_size_x = 256) in;
+
+//********************************************************************************
+// SSBO Bindings
+//********************************************************************************
+
+layout (std430, binding = 15) buffer PredictedBuffer {
+    vec4 predicted_positions[];  // xyz: predicted position, w: unused
+};
+
+// Correction buffer (integer fixed-point)
+layout (std430, binding = 16) buffer CorrectionBuffer {
+    ivec4 corrections[];  // xyz: accumulated correction (fixed-point), w: count
+};
+
+layout (std430, binding = 10) readonly buffer PositionBuffer {
+    vec4 positions[];  // w: inverse mass
+};
+
+//********************************************************************************
+// Uniforms
+//********************************************************************************
+
+uniform uint particle_count;
+
+// Fixed-point scale factor (must match ComputeClothPBD.comp)
+const float INV_FIXED_SCALE = 1.0 / 10000.0;
+
+void main()
+{
+    uint gid = gl_GlobalInvocationID.x;
+    
+    if (gid >= particle_count)
+        return;
+    
+    float inv_mass = positions[gid].w;
+    
+    // Skip fixed particles
+    if (inv_mass < 0.0001)
+    {
+        corrections[gid] = ivec4(0);
+        return;
+    }
+    
+    ivec4 corr = corrections[gid];
+    int count = corr.w;
+    
+    if (count > 0)
+    {
+        // Convert from fixed-point back to float
+        vec3 correction = vec3(
+            float(corr.x) * INV_FIXED_SCALE,
+            float(corr.y) * INV_FIXED_SCALE,
+            float(corr.z) * INV_FIXED_SCALE
+        );
+        
+        // Average the corrections (Jacobi)
+        correction = correction / float(count);
+        
+        // Apply correction to predicted position
+        predicted_positions[gid].xyz += correction;
+    }
+    
+    // Reset correction buffer for next iteration
+    corrections[gid] = ivec4(0);
+}

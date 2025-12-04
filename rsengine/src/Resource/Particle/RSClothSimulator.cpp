@@ -391,6 +391,22 @@ namespace RS_Cloth
 		glBufferData(GL_SHADER_STORAGE_BUFFER, 
 			m_particle_count * sizeof(glm::vec4), nullptr, GL_DYNAMIC_DRAW);
 
+		// Predicted Position SSBO (binding 15) - for PBD
+		glGenBuffers(1, &m_predicted_ssbo);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_predicted_ssbo);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, 
+			m_particle_count * sizeof(glm::vec4), nullptr, GL_DYNAMIC_DRAW);
+
+		// Correction SSBO (binding 16) - for Jacobi PBD (integer fixed-point)
+		glGenBuffers(1, &m_correction_ssbo);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_correction_ssbo);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, 
+			m_particle_count * sizeof(glm::ivec4), nullptr, GL_DYNAMIC_DRAW);
+
+		// Initialize correction buffer to zero (ivec4)
+		std::vector<glm::ivec4> zero_buffer(m_particle_count, glm::ivec4(0));
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, m_particle_count * sizeof(glm::ivec4), zero_buffer.data());
+
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 		RS_INFO("Cloth GPU buffers created");
@@ -403,6 +419,8 @@ namespace RS_Cloth
 		if (m_velocity_ssbo) { glDeleteBuffers(1, &m_velocity_ssbo); m_velocity_ssbo = 0; }
 		if (m_spring_ssbo) { glDeleteBuffers(1, &m_spring_ssbo); m_spring_ssbo = 0; }
 		if (m_normal_ssbo) { glDeleteBuffers(1, &m_normal_ssbo); m_normal_ssbo = 0; }
+		if (m_predicted_ssbo) { glDeleteBuffers(1, &m_predicted_ssbo); m_predicted_ssbo = 0; }
+		if (m_correction_ssbo) { glDeleteBuffers(1, &m_correction_ssbo); m_correction_ssbo = 0; }
 
 		if (m_vao) { glDeleteVertexArrays(1, &m_vao); m_vao = 0; }
 		if (m_vbo) { glDeleteBuffers(1, &m_vbo); m_vbo = 0; }
@@ -445,19 +463,16 @@ namespace RS_Cloth
 
 	void RSClothSimulator::ComputePBD(float dt)
 	{
-		// Bind SSBOs
+		// Bind all SSBOs
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_POSITION_BINDING, m_position_ssbo);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_PREV_POSITION_BINDING, m_prev_position_ssbo);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_VELOCITY_BINDING, m_velocity_ssbo);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_SPRING_BINDING, m_spring_ssbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_PREDICTED_BINDING, m_predicted_ssbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_CORRECTION_BINDING, m_correction_ssbo);
 
-		// TODO: Dispatch PBD compute shaders
-		// 1. Predict positions
-		// 2. Solve distance constraints (iterate)
-		// 3. Update velocities
-
-		// For now, CPU simulation fallback
-		CPUSimulatePBD(dt);
+		// Use GPU compute shaders for PBD simulation
+		GPUComputePBD(dt);
 
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	}
@@ -474,6 +489,16 @@ namespace RS_Cloth
 	}
 
 	void RSClothSimulator::CalculateNormals()
+	{
+		// Use GPU compute shader for normal calculation
+		GPUCalculateNormals();
+	}
+
+	//********************************************************************************
+	// CPU Simulation (Fallback - kept for debugging/comparison)
+	//********************************************************************************
+
+	void RSClothSimulator::CPUCalculateNormals()
 	{
 		// CPU-based normal calculation
 		// Read positions from GPU
@@ -1028,6 +1053,129 @@ namespace RS_Cloth
 		point = m_collision_plane_object->GetTransform()->GetPosition();
 		normal = glm::vec3(0.0f, 1.0f, 0.0f);  // Default Y-up normal
 		return true;
+	}
+
+	//********************************************************************************
+	// GPU Compute Shader Functions
+	//********************************************************************************
+
+	void RSClothSimulator::GPUComputePBD(float dt)
+	{
+		auto shader_manager = RSResourceManager::GetInstance()->GetShaderManager();
+		
+		const GLuint particle_workgroups = (m_particle_count + CLOTH_WORKGROUP_SIZE - 1) / CLOTH_WORKGROUP_SIZE;
+		const GLuint spring_workgroups = (m_spring_count + CLOTH_WORKGROUP_SIZE - 1) / CLOTH_WORKGROUP_SIZE;
+
+		// Get collision parameters
+		glm::vec3 sphere_center, plane_point, plane_normal;
+		float sphere_radius;
+		bool has_sphere = GetSphereCollisionParams(sphere_center, sphere_radius);
+		bool has_plane = GetPlaneCollisionParams(plane_point, plane_normal);
+
+		//--------------------------------------------------------------------------------
+		// Step 1: Predict positions
+		//--------------------------------------------------------------------------------
+		shader_manager->Use(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_PREDICT);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_PREDICT, 
+			"particle_count", m_particle_count);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_PREDICT, 
+			"dt", dt);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_PREDICT, 
+			"damping", m_cloth_property.damping);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_PREDICT, 
+			"gravity", glm::vec3(0.0f, -m_cloth_property.gravity, 0.0f));
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_PREDICT, 
+			"wind_direction", m_wind_direction);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_PREDICT, 
+			"wind_strength", m_wind_strength);
+
+		glDispatchCompute(particle_workgroups, 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+		//--------------------------------------------------------------------------------
+		// Step 2: Solve distance constraints (Jacobi iteration)
+		//--------------------------------------------------------------------------------
+		const int iterations = m_cloth_property.solver_iterations;
+		
+		for (int iter = 0; iter < iterations; ++iter)
+		{
+			// 2a. Calculate corrections for all springs
+			shader_manager->Use(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_CONSTRAINT);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_CONSTRAINT, 
+				"spring_count", m_spring_count);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_CONSTRAINT, 
+				"compliance", m_cloth_property.compliance);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_CONSTRAINT, 
+				"dt", dt);
+
+			glDispatchCompute(spring_workgroups, 1, 1);
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+			// 2b. Apply accumulated corrections
+			shader_manager->Use(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_APPLY);
+			shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_APPLY, 
+				"particle_count", m_particle_count);
+
+			glDispatchCompute(particle_workgroups, 1, 1);
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		}
+
+		//--------------------------------------------------------------------------------
+		// Step 3: Handle collisions
+		//--------------------------------------------------------------------------------
+		shader_manager->Use(RS_PipelineList::RSComputeShaderNames::CLOTH_COLLISION);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_COLLISION, 
+			"particle_count", m_particle_count);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_COLLISION, 
+			"collision_radius", m_cloth_property.collision_radius);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_COLLISION, 
+			"use_sphere_collision", b_use_sphere_collision && has_sphere);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_COLLISION, 
+			"sphere_center", sphere_center);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_COLLISION, 
+			"sphere_radius", sphere_radius);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_COLLISION, 
+			"use_plane_collision", b_use_plane_collision && has_plane);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_COLLISION, 
+			"plane_point", plane_point);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_COLLISION, 
+			"plane_normal", plane_normal);
+
+		glDispatchCompute(particle_workgroups, 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+		//--------------------------------------------------------------------------------
+		// Step 4: Update velocities and positions
+		//--------------------------------------------------------------------------------
+		shader_manager->Use(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_UPDATE);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_UPDATE, 
+			"particle_count", m_particle_count);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_PBD_UPDATE, 
+			"dt", dt);
+
+		glDispatchCompute(particle_workgroups, 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	}
+
+	void RSClothSimulator::GPUCalculateNormals()
+	{
+		auto shader_manager = RSResourceManager::GetInstance()->GetShaderManager();
+		
+		const GLuint particle_workgroups = (m_particle_count + CLOTH_WORKGROUP_SIZE - 1) / CLOTH_WORKGROUP_SIZE;
+
+		// Bind normal SSBO
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, CLOTH_NORMAL_BINDING, m_normal_ssbo);
+
+		shader_manager->Use(RS_PipelineList::RSComputeShaderNames::CLOTH_NORMAL);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_NORMAL, 
+			"particle_count", m_particle_count);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_NORMAL, 
+			"cloth_width", m_cloth_width);
+		shader_manager->SetData(RS_PipelineList::RSComputeShaderNames::CLOTH_NORMAL, 
+			"cloth_height", m_cloth_height);
+
+		glDispatchCompute(particle_workgroups, 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	}
 
 } // namespace RS_Cloth
