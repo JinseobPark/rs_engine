@@ -1041,7 +1041,7 @@ namespace RS_Cloth
 		
 		center = m_collision_sphere_object->GetTransform()->GetPosition();
 		glm::vec3 scale = m_collision_sphere_object->GetTransform()->GetScale();
-		radius = scale.x;  // Assume uniform scale for sphere
+		radius = scale.x * 0.5f;  // Assume uniform scale for sphere
 		return true;
 	}
 
