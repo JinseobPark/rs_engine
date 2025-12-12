@@ -47,6 +47,7 @@ RSEngine is a custom game engine developed in C++20, featuring GPU-accelerated S
 
 - **GPU-Accelerated Physics Simulation**: Particle physics based on OpenGL Compute Shaders
 - **Real-time Fluid Dynamics**: SPH-based fluid simulation
+- **Real-time Cloth Simulation**: PBD/Mass-Spring cloth with GPU acceleration
 - **PBR Rendering System**: Physically Based Rendering material system
 - **Modular Architecture**: Component-based design with excellent extensibility
 - **Data Visualization**: VTK file loading, point clipping, attribute-based coloring
@@ -80,20 +81,38 @@ A game application built on RSEngine, providing various game states and simulati
 - **Collision Detection**: Mesh-based collision system
 - **Visualization Modes**: Color coding based on velocity, density, pressure, acceleration
 
-#### 2. Rendering System
+#### 2. Cloth Simulation (PBD/Mass-Spring)
+- **Dual Solver Architecture**:
+  - Mass-Spring with Verlet Integration (traditional approach)
+  - Position Based Dynamics / XPBD (stable, modern approach)
+- **Spring Constraint Types**:
+  - Structural springs (horizontal/vertical grid structure)
+  - Shear springs (diagonal, prevent shearing)
+  - Bending springs (skip-one, control bending stiffness)
+- **GPU-Accelerated Simulation**:
+  - 8 Compute Shaders: Force, Integration, Collision, Normal, PBD Predict/Solve/Apply/Update
+  - Jacobi iteration with fixed-point atomic operations
+  - XPBD compliance for tunable stiffness
+- **Collision Detection**:
+  - Sphere collision with configurable radius
+  - Plane collision (ground)
+- **Wind System**: Real-time wind direction and strength control
+- **Real-time Parameters**: Stiffness, damping, gravity, solver iterations, compliance
+
+#### 3. Rendering System
 - **PBR Materials**: Metallic/Roughness workflow
 - **Dual Pipeline**: Deferred/Forward rendering
 - **Particle Rendering**: Handles millions of particles with GPU instancing
 - **Legend System**: Dynamic color mapping and min/max value calculation
 - **Clipping Tools**: Particle filtering based on Plane/Cube/Sphere
 
-#### 3. Engine Architecture
+#### 4. Engine Architecture
 - **System Components**: Application, Input, Physics, Graphics, Timer, Event Handler
 - **Resource Management**: Centralized singleton managers
 - **Fixed/Variable FPS**: Configurable update loop
 - **Event System**: Decoupled communication between systems
 
-#### 4. Data Processing
+#### 5. Data Processing
 - **VTK File Loading**: Supports scientific data visualization formats
 - **Point Clipping**: Data filtering in 3D space
 - **Attribute-based Rendering**: Visualization based on data values
@@ -402,6 +421,7 @@ Available game states in SeobJJangGames:
 |----------|------|-------------|
 | `SRG_JORDY` | Jordy Roll Game | Physics-based rolling game |
 | `SRG_PARTICLE_SIMULATOR` | Particle Simulator | SPH particle simulator |
+| `SRG_CLOTH_SIMULATOR` | Cloth Simulator | PBD/Mass-Spring cloth simulator |
 | `SRG_VTK_LOADER` | VTK Loader | VTK data loader |
 | `SRG_POINT_CLIPPER` | Point Clipper | Point cloud clipping tool |
 
@@ -532,7 +552,7 @@ RS_ERROR("Error");      // Error
 
 **Built with Rock & Stone!**
 
-*Last Updated: November 10, 2025*
+*Last Updated: December 5, 2025*
 
 ---
 ---
@@ -576,6 +596,7 @@ RSEngine은 C++20으로 개발된 커스텀 게임 엔진으로, GPU 가속 SPH(
 
 - **GPU 가속 물리 시뮬레이션**: OpenGL Compute Shader 기반 파티클 물리
 - **실시간 유체 역학**: SPH 방식의 유체 시뮬레이션
+- **실시간 천 시뮬레이션**: PBD/Mass-Spring 기반 GPU 가속 천 물리
 - **PBR 렌더링 시스템**: Physically Based Rendering 머티리얼 시스템
 - **모듈식 아키텍처**: 컴포넌트 기반 설계로 확장성 우수
 - **데이터 시각화**: VTK 파일 로딩, 포인트 클리핑, 속성 기반 컬러링
@@ -609,20 +630,38 @@ RSEngine을 기반으로 개발된 게임 애플리케이션으로, 다양한 �
 - **충돌 감지**: 메시 기반 충돌 시스템
 - **시각화 모드**: 속도, 밀도, 압력, 가속도 기반 컬러 코딩
 
-#### 2. 렌더링 시스템
+#### 2. 천 시뮬레이션 (PBD/Mass-Spring)
+- **듀얼 솔버 아키텍처**:
+  - Mass-Spring + Verlet Integration (전통적 방식)
+  - Position Based Dynamics / XPBD (안정적, 최신 기법)
+- **스프링 제약 조건 유형**:
+  - 구조 스프링 (수평/수직 그리드 구조 유지)
+  - 전단 스프링 (대각선, 전단 변형 방지)
+  - 굽힘 스프링 (스킵-원, 굽힘 강성 제어)
+- **GPU 가속 시뮬레이션**:
+  - 8개 Compute Shader: Force, Integration, Collision, Normal, PBD Predict/Solve/Apply/Update
+  - Fixed-point 원자 연산을 활용한 Jacobi 반복
+  - XPBD compliance로 조절 가능한 강성
+- **충돌 감지**:
+  - 구체 충돌 (반경 조절 가능)
+  - 평면 충돌 (바닥)
+- **바람 시스템**: 실시간 바람 방향 및 세기 조절
+- **실시간 파라미터**: 강성, 감쇠, 중력, 솔버 반복 횟수, compliance
+
+#### 3. 렌더링 시스템
 - **PBR 머티리얼**: Metallic/Roughness 워크플로우
 - **듀얼 파이프라인**: Deferred/Forward 렌더링
 - **파티클 렌더링**: GPU 인스턴싱으로 수백만 파티클 처리
 - **범례 시스템**: 동적 컬러 매핑 및 최소/최대값 계산
 - **클리핑 도구**: Plane/Cube/Sphere 기반 파티클 필터링
 
-#### 3. 엔진 아키텍처
+#### 4. 엔진 아키텍처
 - **시스템 컴포넌트**: Application, Input, Physics, Graphics, Timer, Event Handler
 - **리소스 관리**: 중앙화된 싱글톤 매니저
 - **고정/가변 FPS**: 설정 가능한 업데이트 루프
 - **이벤트 시스템**: 시스템 간 분리된 통신
 
-#### 4. 데이터 처리
+#### 5. 데이터 처리
 - **VTK 파일 로딩**: 과학 데이터 시각화 형식 지원
 - **포인트 클리핑**: 3D 공간에서 데이터 필터링
 - **속성 기반 렌더링**: 데이터 값에 따른 시각화
@@ -931,6 +970,7 @@ SeobJJangGames에서 사용 가능한 게임 스테이트:
 |-----------|------|------|
 | `SRG_JORDY` | Jordy Roll Game | 물리 기반 롤링 게임 |
 | `SRG_PARTICLE_SIMULATOR` | Particle Simulator | SPH 파티클 시뮬레이터 |
+| `SRG_CLOTH_SIMULATOR` | Cloth Simulator | PBD/Mass-Spring 천 시뮬레이터 |
 | `SRG_VTK_LOADER` | VTK Loader | VTK 데이터 로더 |
 | `SRG_POINT_CLIPPER` | Point Clipper | 포인트 클라우드 클리핑 도구 |
 
@@ -1061,4 +1101,4 @@ RS_ERROR("오류");      // 오류
 
 **Built with Rock & Stone!**
 
-*마지막 업데이트: 2025년 11월 10일*
+*마지막 업데이트: 2025년 12월 5일*
