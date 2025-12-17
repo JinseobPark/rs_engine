@@ -14,6 +14,9 @@ namespace SJG
         m_resource_manager->GetParticleManager()->CreateClothSimulator();
         m_cloth_simulator_data = new ClothSimulatorData();
         m_cloth_simulator = m_resource_manager->GetParticleManager()->GetClothSimulator();
+        
+        RS_Application::mRSAPPLICATION->SetWindowIcon("resources/InitLoadFiles/Textures/rns_icon.png");
+        RS_Application::mRSAPPLICATION->SetWindowTitle("RS Cloth Simulator");
     }
 
     void ClothSimulatorInitialize()

@@ -25,7 +25,7 @@ namespace RS_Graphics
 		glEnable(GL_POINT_SPRITE);
 
 		// m_rendering_flag includes shadow and deferred rendering and SSAO
-    	m_rendering_flag = RenderingFlag::SHADOW | RenderingFlag::OPAQUE_DEFERRED | RenderingFlag::SSAO | RenderingFlag::SSR ;
+    	m_rendering_flag = RenderingFlag::SHADOW | RenderingFlag::OPAQUE_DEFERRED | RenderingFlag::SSAO | RenderingFlag::SSR | RenderingFlag::CLOTH_DEFERRED;
 	}
 
 	void RSGraphics::PostInitialize()

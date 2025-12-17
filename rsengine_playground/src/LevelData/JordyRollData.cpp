@@ -28,6 +28,7 @@ namespace SJG
 			RS_Mesh::RSMesh* maca_mesh = new RS_Mesh::RSMesh();
 			maca_mesh->SetMeshData(m_resource_manager->GetMeshManager()->GetMesh("macaron"));
 			maca_mesh->SetTextureID(m_resource_manager->GetTextureManager()->GetTexture("mint_tex")->GetTexture());
+			maca_mesh->SetMaterial(m_resource_manager->GetMaterialManager()->GetMaterial("mint_macaron"));
 			maca_mesh->SetIsTexture(true);
 
 			maca_model->SetMesh(maca_mesh);

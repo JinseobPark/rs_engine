@@ -34,9 +34,9 @@ namespace SJG
         const auto btn = new RS_Widget::RSTextButtonWidget(btn_text[i]);
         btn->SetSize(BTN_WIDTH, BTN_HEIGHT);
         btn->SetPosition(BTN_INIT_X, BTN_INIT_Y - BTN_MARGIN * static_cast<float>(i));
-        btn->SetDefaultTexture(texture_manager->GetTexture("jordy")->GetTexture());
+        btn->SetDefaultTexture(texture_manager->GetTexture("default")->GetTexture());
         btn->SetTextSize(0.12f);
-        btn->SetFuncTexture(texture_manager->GetTexture("legend5")->GetTexture());
+        btn->SetFuncTexture(texture_manager->GetTexture("bok")->GetTexture());
         btn->SetTextAlignment(RSTextAlignment::MIDDLE);
         btn->SetCallback(std::bind(btn_func[i], this));
         btn->Initialize();

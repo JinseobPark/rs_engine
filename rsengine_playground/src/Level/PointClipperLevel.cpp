@@ -20,7 +20,7 @@ namespace SJG
 
     // Create glfw image 2x2
     RS_Application::mRSAPPLICATION->SetWindowIcon("resources/InitLoadFiles/Textures/rns_icon.png");
-    RS_Application::mRSAPPLICATION->SetWindowTitle("Rock And Stone FOREVER");
+    RS_Application::mRSAPPLICATION->SetWindowTitle("Point Cloud Viewer");
   }
 
   void PointClipperInitialize()

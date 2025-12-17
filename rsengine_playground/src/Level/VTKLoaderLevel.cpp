@@ -17,7 +17,7 @@ namespace SJG
     m_vtk_loader_widget = new VTKLoaderWidget();
 
     RS_Application::mRSAPPLICATION->SetWindowIcon("resources/InitLoadFiles/Textures/snow.png");
-    RS_Application::mRSAPPLICATION->SetWindowTitle("NFlow PostProcessor");
+    RS_Application::mRSAPPLICATION->SetWindowTitle("Point Cloud Viewer");
   }
 
   void VTKLoaderInitialize()

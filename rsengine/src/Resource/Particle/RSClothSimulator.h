@@ -500,8 +500,8 @@ namespace RS_Cloth
 		RS_Object::RSObject* m_collision_sphere_object = nullptr;  ///< Collision sphere object (found by name)
 		RS_Object::RSObject* m_collision_plane_object = nullptr;   ///< Collision plane object (found by name)
 
-		const std::string m_collision_sphere_name = "Cloth_Sphere";  ///< Name of collision sphere object
-		const std::string m_collision_plane_name = "Cloth_Plane";   ///< Name of collision plane object
+		const std::string m_collision_sphere_name = "cloth_sphere";  ///< Name of collision sphere object
+		const std::string m_collision_plane_name = "cloth_plane";   ///< Name of collision plane object
 
 		bool b_use_sphere_collision = true;
 		bool b_use_plane_collision = true;

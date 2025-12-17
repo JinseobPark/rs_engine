@@ -27,6 +27,7 @@ namespace SJG
     private:
 		RS_Object::RSObject* m_sphere_object;
 		RS_Object::RSObject* m_plane_object;
+    RS_Object::RSObject* m_cloth_plane_object;
     };
 } // namespace SJG
 

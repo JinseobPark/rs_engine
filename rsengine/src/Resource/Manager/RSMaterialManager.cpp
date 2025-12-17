@@ -122,6 +122,9 @@ void RSMaterialManager::BuildMaterials()
   CreateMaterial("alley-brick-wall", m_tm->GetTexture_UINT("alley-brick-wall"),
                   m_tm->GetNormalTexture_UINT("alley-brick-wall_normalmap"), 0.0f, 0.8f, 0.4f);
 
+  CreateMaterial("mint_macaron", m_tm->GetTexture_UINT("mint_tex"),
+                  m_tm->GetNormalTexture_UINT("default"));
+
   CreateMaterial("cloth", m_default_texture_uint, m_default_normal_map_uint); ///< Temporary, modify on runtime
 
 }
